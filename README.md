@@ -1,4 +1,4 @@
-# elrond-libp2p-attacker
+# elrond-peer-attacker
 
 (Work in progress...)
 
