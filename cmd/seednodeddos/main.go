@@ -101,11 +101,8 @@ func startApp(ctx *cli.Context) error {
 }
 
 func ddosSeedNode(port int, seedNodeAddress string) {
-	// create a background context (i.e. one that never cancels)
 	ctx := context.Background()
 
-	// start a libp2p node that listens on a random local TCP port,
-	// but without running the built-in ping protocol
 	node, err := libp2p.New(ctx,
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port)),
 		libp2p.Ping(false),
@@ -115,11 +112,9 @@ func ddosSeedNode(port int, seedNodeAddress string) {
 		panic(err)
 	}
 
-	// configure our own ping protocol
 	pingService := &ping.PingService{Host: node}
 	node.SetStreamHandler(ping.ID, pingService.PingHandler)
 
-	// print the node's PeerInfo in multiaddr format
 	peerInfo := &peerstore.PeerInfo{
 		ID:    node.ID(),
 		Addrs: node.Addrs(),
