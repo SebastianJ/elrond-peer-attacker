@@ -31,7 +31,6 @@ VERSION:
    {{.Version}}
    {{end}}
 `
-	// count defines the number of seed nodes to launch
 	count = cli.IntFlag{
 		Name:  "count",
 		Usage: "How many seed ping nodes to launch",
