@@ -240,7 +240,7 @@ func broadcastMessage(messenger p2p.Messenger) {
 	for _, topic := range topics {
 		fmt.Printf("Sending message of %d bytes to topic/channel %s\n", bytes, topic)
 
-		go messenger.BroadcastOnChannelBlocking(
+		go messenger.BroadcastOnChannel(
 			node.SendTransactionsPipe,
 			topic,
 			bytes,
