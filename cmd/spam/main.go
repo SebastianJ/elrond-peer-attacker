@@ -215,22 +215,27 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 		return err
 	}
 
-	for _, topic := range topics {
-		messenger.CreateTopic(topic, true)
-	}
-
+	go subscribeToTopics(messenger)
 	go displayMessengerInfo(messenger)
 
 	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", waitTime)
 	time.Sleep(time.Second * time.Duration(waitTime))
 
 	for {
+		go subscribeToTopics(messenger)
 		go broadcastMessage(messenger)
+		go displayMessengerInfo(messenger)
 
-		select {
+		/*select {
 		case <-time.After(time.Second * 5):
-			go displayMessengerInfo(messenger)
-		}
+			//go displayMessengerInfo(messenger)
+		}*/
+	}
+}
+
+func subscribeToTopics(messenger p2p.Messenger) {
+	for _, topic := range topics {
+		messenger.CreateTopic(topic, true)
 	}
 }
 
