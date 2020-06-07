@@ -235,26 +235,28 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 }
 
 func broadcastMessage(messenger p2p.Messenger) {
-	bytes, _ := generateTransaction()
+	bytes, err := generateTransaction()
 
-	for _, topic := range topics {
-		fmt.Printf("Sending message of %d bytes to topic/channel %s\n", bytes, topic)
+	if err == nil {
+		for _, topic := range topics {
+			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
-		go messenger.BroadcastOnChannel(
-			node.SendTransactionsPipe,
-			topic,
-			bytes,
-		)
+			go messenger.BroadcastOnChannel(
+				node.SendTransactionsPipe,
+				topic,
+				bytes,
+			)
+		}
 	}
 }
 
 func generateTransaction() ([]byte, error) {
-	hexSender, err := hex.DecodeString("erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqplllst77y4l")
+	hexSender, err := generateAddress()
 	if err != nil {
 		return nil, err
 	}
 
-	hexReceiver, err := hex.DecodeString("erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqplllst77y4l")
+	hexReceiver, err := generateAddress()
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +277,10 @@ func generateTransaction() ([]byte, error) {
 	}
 
 	return txBuff, err
+}
+
+func generateAddress() ([]byte, error) {
+	return hex.DecodeString("000000000000000000005fed9c659422cd8429ce92f8973bba2a9fb51e0eb3a1")
 }
 
 func createNode(p2pConfig config.P2PConfig) (p2p.Messenger, error) {
