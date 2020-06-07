@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/ElrondNetwork/elrond-go/data/transaction"
 	"github.com/ElrondNetwork/elrond-go/display"
-	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	"github.com/SebastianJ/elrond-libp2p-attacker/utils"
@@ -111,6 +111,8 @@ VERSION:
 	txData = ""
 
 	waitTime = 30
+
+	messageCount = 100000
 
 	errNilSeed                     = errors.New("nil seed")
 	errEmotySeed                   = errors.New("empty seed")
@@ -215,17 +217,15 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 		return err
 	}
 
-	go subscribeToTopics(messenger)
-	go displayMessengerInfo(messenger)
-
-	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", waitTime)
 	time.Sleep(time.Second * time.Duration(waitTime))
 
-	for {
-		go subscribeToTopics(messenger)
-		go broadcastMessage(messenger)
-		go displayMessengerInfo(messenger)
+	subscribeToTopics(messenger)
+	displayMessengerInfo(messenger)
 
+	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", waitTime)
+
+	for {
+		performWork(messenger)
 		/*select {
 		case <-time.After(time.Second * 5):
 			//go displayMessengerInfo(messenger)
@@ -239,15 +239,30 @@ func subscribeToTopics(messenger p2p.Messenger) {
 	}
 }
 
-func broadcastMessage(messenger p2p.Messenger) {
+func performWork(messenger p2p.Messenger) {
+	subscribeToTopics(messenger)
+
+	var waitGroup sync.WaitGroup
+
+	for i := 0; i <= messageCount; i++ {
+		waitGroup.Add(1)
+		go broadcastMessage(messenger, &waitGroup)
+	}
+
+	waitGroup.Wait()
+}
+
+func broadcastMessage(messenger p2p.Messenger, waitGroup *sync.WaitGroup) {
+	defer waitGroup.Done()
 	bytes, err := generateTransaction()
 
 	if err == nil {
 		for _, topic := range topics {
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
-			go messenger.BroadcastOnChannel(
-				node.SendTransactionsPipe,
+			messenger.BroadcastOnChannelBlocking(
+				//node.SendTransactionsPipe,
+				topic,
 				topic,
 				bytes,
 			)
