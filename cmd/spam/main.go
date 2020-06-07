@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -13,6 +16,7 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/core"
+	"github.com/ElrondNetwork/elrond-go/data/transaction"
 	"github.com/ElrondNetwork/elrond-go/display"
 	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
@@ -231,14 +235,43 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 }
 
 func broadcastMessage(messenger p2p.Messenger) {
+	bytes, _ := generateTransaction()
+
 	for _, topic := range topics {
 		fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(txData), topic)
+
 		go messenger.BroadcastOnChannelBlocking(
 			node.SendTransactionsPipe,
 			topic,
-			[]byte(txData),
+			bytes,
 		)
 	}
+}
+
+func generateTransaction() ([]byte, error) {
+	hexSender, err := hex.DecodeString("erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqplllst77y4l")
+	if err != nil {
+		return nil, err
+	}
+
+	hexReceiver, err := hex.DecodeString("erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqplllst77y4l")
+	if err != nil {
+		return nil, err
+	}
+
+	tx := transaction.Transaction{
+		Nonce:    1,
+		SndAddr:  hexSender,
+		RcvAddr:  hexReceiver,
+		Value:    new(big.Int).SetInt64(1000000000),
+		Data:     []byte(txData),
+		GasPrice: 200000000000,
+		GasLimit: 50000,
+	}
+
+	txBuff, err := json.Marshal(&tx)
+
+	return txBuff, err
 }
 
 func createNode(p2pConfig config.P2PConfig) (p2p.Messenger, error) {
