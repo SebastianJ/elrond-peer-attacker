@@ -19,6 +19,7 @@
 
 /vendor
 /esdata
+/data
 .env
 *.log
 

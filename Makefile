@@ -15,6 +15,9 @@ DIR := ${CURDIR}
 eclipse:
 	$(env) go build -o $(dist)/eclipse -ldflags="$(ldflags)" cmd/eclipse/main.go
 
+spam:
+	$(env) go build -o $(dist)/spam -ldflags="$(ldflags)" cmd/spam/main.go
+
 .PHONY:clean
 
 clean:
