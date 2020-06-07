@@ -228,7 +228,7 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 func broadcastMessage(messenger p2p.Messenger) {
 	for _, topic := range topics {
 		fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(txData), topic)
-		messenger.BroadcastOnChannelBlocking(
+		go messenger.BroadcastOnChannelBlocking(
 			node.SendTransactionsPipe,
 			topic,
 			[]byte(txData),
