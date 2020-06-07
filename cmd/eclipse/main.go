@@ -1,13 +1,8 @@
 package main
 
 import (
-	"context"
-	"crypto/ecdsa"
-	"crypto/rand"
 	"errors"
 	"fmt"
-	"io"
-	mathRand "math/rand"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -19,15 +14,9 @@ import (
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/ElrondNetwork/elrond-go/display"
-	"github.com/ElrondNetwork/elrond-go/hashing/sha256"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
-	"github.com/ElrondNetwork/elrond-go/p2p/libp2p/discovery"
-	factoryP2P "github.com/ElrondNetwork/elrond-go/p2p/libp2p/factory"
-	"github.com/ElrondNetwork/elrond-go/p2p/loadBalancer"
 	"github.com/SebastianJ/elrond-libp2p-attacker/utils"
-	"github.com/btcsuite/btcd/btcec"
-	libp2pCrypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/urfave/cli"
 )
 
@@ -66,7 +55,13 @@ VERSION:
 		Value: "../../data/ips.txt",
 	}
 
-	p2pConfigurationFile = "../../config/p2p.toml"
+	configurationPath = cli.StringFlag{
+		Name:  "config",
+		Usage: "Path to p2p.toml config file",
+		Value: "./config/p2p.toml",
+	}
+
+	p2pConfigurationPath = "./config/p2p.toml"
 
 	errNilSeed                     = errors.New("nil seed")
 	errEmotySeed                   = errors.New("empty seed")
@@ -113,7 +108,7 @@ func main() {
 	cli.AppHelpTemplate = seedNodeHelpTemplate
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{count, p2pSeed, ipAddressFile}
+	app.Flags = []cli.Flag{count, p2pSeed, ipAddressFile, configurationPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -136,11 +131,15 @@ func main() {
 func startApp(ctx *cli.Context) error {
 	fmt.Println("Starting app...")
 
-	p2pConfig, err := core.LoadP2PConfig(p2pConfigurationFile)
+	if ctx.IsSet(configurationPath.Name) {
+		p2pConfigurationPath = ctx.GlobalString(configurationPath.Name)
+	}
+
+	p2pConfig, err := core.LoadP2PConfig(p2pConfigurationPath)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Initialized with p2p config from: %s\n", p2pConfigurationFile)
+	fmt.Printf("Initialized with p2p config from: %s\n", p2pConfigurationPath)
 
 	if ctx.IsSet(p2pSeed.Name) {
 		p2pConfig.Node.Seed = ctx.GlobalString(p2pSeed.Name)
@@ -180,7 +179,7 @@ func startSeedNodes(p2pConfig *config.P2PConfig, nodeCount int, addresses []stri
 }
 
 func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
-	messenger, err := createNode(p2pConfig, address)
+	messenger, err := createNode(*p2pConfig)
 	if err != nil {
 		return err
 	}
@@ -199,83 +198,13 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 	}
 }
 
-func createNode(p2pConfig *config.P2PConfig, address string) (p2p.Messenger, error) {
-	var randReader io.Reader
-	if p2pConfig.Node.Seed != "" {
-		hasher := sha256.Sha256{}
-		randReader = NewSeedRandReader(hasher.Compute(p2pConfig.Node.Seed))
-	} else {
-		randReader = rand.Reader
+func createNode(p2pConfig config.P2PConfig) (p2p.Messenger, error) {
+	arg := libp2p.ArgsNetworkMessenger{
+		ListenAddress: libp2p.ListenAddrWithIp4AndTcp,
+		P2pConfig:     p2pConfig,
 	}
 
-	netMessenger, err := createNetMessenger(p2pConfig, randReader, address)
-	if err != nil {
-		return nil, err
-	}
-
-	return netMessenger, nil
-}
-
-func createNetMessenger(
-	p2pConfig *config.P2PConfig,
-	randReader io.Reader,
-	address string,
-) (p2p.Messenger, error) {
-
-	ctx := context.Background()
-
-	if p2pConfig.Node.Port < 0 {
-		return nil, errInvalidPort
-	}
-
-	pDiscoveryFactory := factoryP2P.NewPeerDiscovererCreator(*p2pConfig)
-	pDiscoverer, err := pDiscoveryFactory.CreatePeerDiscoverer()
-	if err != nil {
-		return nil, err
-	}
-	_, ok := pDiscoverer.(*discovery.KadDhtDiscoverer)
-	if !ok {
-		return nil, errPeerDiscoveryShouldBeKadDht
-	}
-
-	fmt.Printf("Starting with peer discovery: %s\n", pDiscoverer.Name())
-
-	prvKey, _ := ecdsa.GenerateKey(btcec.S256(), randReader)
-	sk := (*libp2pCrypto.Secp256k1PrivateKey)(prvKey)
-
-	var nm p2p.Messenger
-
-	if address == "" {
-		nm, err = libp2p.NewNetworkMessengerOnFreePort(
-			ctx,
-			sk,
-			nil,
-			loadBalancer.NewOutgoingChannelLoadBalancer(),
-			pDiscoverer,
-		)
-	} else {
-		formattedAddress := fmt.Sprintf("/ip4/%s/tcp", address)
-		startPort := 49152
-		mathRand.Seed(time.Now().UnixNano())
-		randomPort := startPort + mathRand.Intn(10000)
-
-		nm, err = libp2p.NewNetworkMessenger(
-			ctx,
-			randomPort,
-			sk,
-			nil,
-			loadBalancer.NewOutgoingChannelLoadBalancer(),
-			pDiscoverer,
-			formattedAddress,
-			999999,
-		)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return nm, nil
+	return libp2p.NewNetworkMessenger(arg)
 }
 
 func displayMessengerInfo(messenger p2p.Messenger) {
