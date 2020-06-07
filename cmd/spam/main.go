@@ -270,6 +270,9 @@ func generateTransaction() ([]byte, error) {
 	}
 
 	txBuff, err := json.Marshal(&tx)
+	if err != nil {
+		return nil, err
+	}
 
 	return txBuff, err
 }
