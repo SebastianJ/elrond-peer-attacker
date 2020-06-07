@@ -222,7 +222,7 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 	go displayMessengerInfo(messenger)
 
 	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", waitTime)
-	time.Sleep(time.Duration(waitTime))
+	time.Sleep(time.Second * time.Duration(waitTime))
 
 	for {
 		go broadcastMessage(messenger)
