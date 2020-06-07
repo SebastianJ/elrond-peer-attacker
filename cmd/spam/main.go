@@ -254,13 +254,15 @@ func performWork(messenger p2p.Messenger) {
 
 func broadcastMessage(messenger p2p.Messenger, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
-	bytes, err := generateTransaction()
+	//bytes, err := generateTransaction()
+	bytes := []byte(txData)
+	var err error = nil
 
 	if err == nil {
 		for _, topic := range topics {
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
-			messenger.BroadcastOnChannelBlocking(
+			messenger.BroadcastOnChannel(
 				//node.SendTransactionsPipe,
 				topic,
 				topic,
