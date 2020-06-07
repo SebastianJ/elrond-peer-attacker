@@ -14,6 +14,7 @@ import (
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/ElrondNetwork/elrond-go/display"
+	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	"github.com/SebastianJ/elrond-libp2p-attacker/utils"
@@ -97,6 +98,10 @@ VERSION:
 		"accountTrieNodes_META",
 		"accountTrieNodes_0_META",
 		"accountTrieNodes_1_META",
+		"consensus_0",
+		"consensus_1",
+		"consensus_meta",
+		"heartbeat",
 	}
 
 	txData = ""
@@ -223,7 +228,11 @@ func startSeedNode(p2pConfig *config.P2PConfig, address string) error {
 func broadcastMessage(messenger p2p.Messenger) {
 	for _, topic := range topics {
 		fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(txData), topic)
-		messenger.BroadcastOnChannel(topic, topic, []byte(txData))
+		messenger.BroadcastOnChannelBlocking(
+			node.SendTransactionsPipe,
+			topic,
+			[]byte(txData),
+		)
 	}
 }
 
