@@ -16,43 +16,20 @@ import (
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
-	"github.com/SebastianJ/elrond-peer-attacker/utils"
 )
 
-var (
-	shards = []string{
-		"META",
-		"0",
-		"1",
-	}
-
-	txData = ""
-
-	waitTime = 30
-
-	messageCount = 100000
-)
-
-func StartNodes(p2pConfig *config.P2PConfig, nodeCount int, addresses []string) error {
+func StartNodes() error {
 	fmt.Println("Starting new node....")
 
-	var address string
-
-	if len(addresses) > 0 {
-		address = utils.RandomElementFromArray(addresses)
-	} else {
-		address = ""
-	}
-
-	for i := 0; i <= nodeCount; i++ {
-		go StartNode(p2pConfig, address)
+	for i := 0; i <= Configuration.Peers; i++ {
+		go StartNode()
 	}
 
 	return nil
 }
 
-func StartNode(p2pConfig *config.P2PConfig, address string) error {
-	messenger, err := createNode(*p2pConfig)
+func StartNode() error {
+	messenger, err := createNode(*Configuration.ElrondConfig)
 	if err != nil {
 		return err
 	}
@@ -62,12 +39,12 @@ func StartNode(p2pConfig *config.P2PConfig, address string) error {
 		return err
 	}
 
-	time.Sleep(time.Second * time.Duration(waitTime))
+	time.Sleep(time.Second * time.Duration(Configuration.ConnectionWait))
 
 	subscribeToTopics(messenger)
 	displayMessengerInfo(messenger)
 
-	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", waitTime)
+	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", Configuration.ConnectionWait)
 
 	for {
 		performWork(messenger)
@@ -79,7 +56,7 @@ func StartNode(p2pConfig *config.P2PConfig, address string) error {
 }
 
 func subscribeToTopics(messenger p2p.Messenger) {
-	for _, topic := range topics {
+	for _, topic := range Configuration.Topics {
 		messenger.CreateTopic(topic, true)
 	}
 }
@@ -89,7 +66,7 @@ func performWork(messenger p2p.Messenger) {
 
 	var waitGroup sync.WaitGroup
 
-	for i := 0; i <= messageCount; i++ {
+	for i := 0; i <= Configuration.MessageCount; i++ {
 		waitGroup.Add(1)
 		go broadcastMessage(messenger, &waitGroup)
 	}
@@ -100,11 +77,11 @@ func performWork(messenger p2p.Messenger) {
 func broadcastMessage(messenger p2p.Messenger, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 	bytes, err := generateTransaction()
-	//bytes := []byte(txData)
-	//var err error = nil
+	/*bytes := []byte(Configuration.Data)
+	var err error = nil*/
 
 	if err == nil {
-		for _, topic := range topics {
+		for _, topic := range Configuration.Topics {
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
 			messenger.BroadcastOnChannel(
@@ -133,7 +110,7 @@ func generateTransaction() ([]byte, error) {
 		SndAddr:  hexSender,
 		RcvAddr:  hexReceiver,
 		Value:    new(big.Int).SetInt64(1000000000),
-		Data:     []byte(txData),
+		Data:     []byte(Configuration.Data),
 		GasPrice: 200000000000,
 		GasLimit: 50000,
 	}
@@ -185,7 +162,7 @@ func displayMessengerInfo(messenger p2p.Messenger) {
 	tbl2, _ := display.CreateTableString(headerConnectedAddresses, connAddresses)
 	fmt.Println(tbl2)
 
-	for _, topic := range topics {
+	for _, topic := range Configuration.Topics {
 		peers := messenger.ConnectedPeersOnTopic(topic)
 		fmt.Printf("Connected peers on topic %s: %d\n\n", topic, len(peers))
 	}

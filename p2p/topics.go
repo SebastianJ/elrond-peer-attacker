@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	topics = []string{
+	Topics = []string{
 		"transactions_META",
 		"transactions_0_META",
 		"transactions_0",
@@ -53,11 +53,11 @@ func generateTopics() []string {
 		if baseTopic == "txBlockBodies" {
 			topics = append(topics, fmt.Sprintf("%s_ALL", baseTopic))
 		} else {
-			for _, shard := range shards {
+			for _, shard := range Configuration.Shards {
 				shard = strings.ToUpper(shard)
 				topics = append(topics, fmt.Sprintf("%s_%s", baseTopic, shard))
 
-				for _, innerShard := range shards {
+				for _, innerShard := range Configuration.Shards {
 					innerShard = strings.ToUpper(innerShard)
 					if innerShard != shard {
 						topics = append(topics, fmt.Sprintf("%s_%s_%s", baseTopic, shard, innerShard))

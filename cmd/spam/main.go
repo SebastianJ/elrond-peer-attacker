@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/ElrondNetwork/elrond-go/core"
@@ -19,12 +18,6 @@ var (
 		Name:  "count",
 		Usage: "How many seed nodes to launch",
 		Value: 100,
-	}
-	// p2pSeed defines a flag to be used as a seed when generating P2P credentials. Useful for seed nodes.
-	p2pSeed = cli.StringFlag{
-		Name:  "p2p-seed",
-		Usage: "P2P seed will be used when generating credentials for p2p component. Can be any string.",
-		Value: "seed",
 	}
 
 	ipAddressFile = cli.StringFlag{
@@ -53,7 +46,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{count, p2pSeed, ipAddressFile, configurationPath, dataPath}
+	app.Flags = []cli.Flag{count, ipAddressFile, configurationPath, dataPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -86,23 +79,29 @@ func startApp(ctx *cli.Context) error {
 	}
 	fmt.Printf("Initialized with p2p config from: %s\n", p2pConfigurationPath)
 
-	if ctx.IsSet(p2pSeed.Name) {
-		p2pConfig.Node.Seed = ctx.GlobalString(p2pSeed.Name)
-	}
+	p2p.Configuration = p2p.Config{}
 
 	if ctx.IsSet(dataPath.Name) {
 		fileData, err := utils.ReadFileToString(ctx.GlobalString(dataPath.Name))
 		if err != nil {
 			return err
 		}
-		txData = fileData
+
+		p2p.Configuration.Data = fileData
 	}
 
-	nodeCount := ctx.GlobalInt(count.Name)
-	addressPath, _ := filepath.Abs(ctx.GlobalString(ipAddressFile.Name))
-	addresses, _ := utils.ArrayFromFile(addressPath)
+	p2p.Configuration.ElrondConfig = p2pConfig
+	p2p.Configuration.Peers = ctx.GlobalInt(count.Name)
+	p2p.Configuration.Topics = p2p.Topics
+	p2p.Configuration.ConnectionWait = 30
+	p2p.Configuration.MessageCount = 100000
+	p2p.Configuration.Shards = []string{
+		"META",
+		"0",
+		"1",
+	}
 
-	err = p2p.StartNodes(p2pConfig, nodeCount, addresses)
+	err = p2p.StartNodes()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

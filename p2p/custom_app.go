@@ -25,7 +25,7 @@ func StartCustomNodes(p2pConfig *config.P2PConfig, nodeCount int, addresses []st
 
 	//cleanUpDHT()
 
-	hosts, _ := custom.ConnectPeers(port, nodeCount, topics, p2pConfig.KadDhtPeerDiscovery.InitialPeerList)
+	hosts, _ := custom.ConnectPeers(port, nodeCount, Configuration.Shards, p2pConfig.KadDhtPeerDiscovery.InitialPeerList)
 
 	var waitGroup sync.WaitGroup
 
