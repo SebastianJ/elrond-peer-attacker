@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,10 +49,10 @@ func StartNode() error {
 
 	for {
 		performWork(messenger)
-		/*select {
+		select {
 		case <-time.After(time.Second * 5):
-			//go displayMessengerInfo(messenger)
-		}*/
+			go displayMessengerInfo(messenger)
+		}
 	}
 }
 
@@ -78,14 +80,19 @@ func performWork(messenger p2p.Messenger) {
 func broadcastMessage(messenger p2p.Messenger) { //, waitGroup *sync.WaitGroup) {
 	//defer waitGroup.Done()
 	//bytes, err := generateTransaction()
-	bytes := []byte(Configuration.Data)
+
+	randomNumber := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(1000000)
+	var message strings.Builder
+	message.WriteString(Configuration.Data)
+	message.WriteString(strconv.Itoa(randomNumber))
+	bytes := []byte(message.String())
 	var err error = nil
 
 	if err == nil {
 		for _, topic := range Configuration.Topics {
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
-			messenger.BroadcastOnChannel(
+			go messenger.BroadcastOnChannel(
 				//node.SendTransactionsPipe,
 				topic,
 				topic,
