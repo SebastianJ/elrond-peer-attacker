@@ -47,11 +47,17 @@ func StartNode() error {
 
 	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", Configuration.ConnectionWait)
 
+	nonce := uint64(1)
+
 	for {
-		performWork(messenger)
 		select {
-		case <-time.After(time.Second * 5):
-			go displayMessengerInfo(messenger)
+		case <-time.After(time.Second * 10):
+			subscribeToTopics(messenger)
+		case <-time.After(time.Second * 35):
+			displayMessengerInfo(messenger)
+		default:
+			broadcastMessage(messenger, nonce)
+			nonce++
 		}
 	}
 }
@@ -62,31 +68,12 @@ func subscribeToTopics(messenger p2p.Messenger) {
 	}
 }
 
-func performWork(messenger p2p.Messenger) {
-	subscribeToTopics(messenger)
-
-	/*var waitGroup sync.WaitGroup
-
-	for i := 0; i <= Configuration.MessageCount; i++ {
-		waitGroup.Add(1)
-
-	}*/
-
-	go broadcastMessage(messenger) //, &waitGroup)
-
-	//waitGroup.Wait()
-}
-
-func broadcastMessage(messenger p2p.Messenger) { //, waitGroup *sync.WaitGroup) {
+func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sync.WaitGroup) {
 	//defer waitGroup.Done()
-	//bytes, err := generateTransaction()
+	bytes, err := generateTransaction(nonce)
 
-	randomNumber := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(1000000)
-	var message strings.Builder
-	message.WriteString(Configuration.Data)
-	message.WriteString(strconv.Itoa(randomNumber))
-	bytes := []byte(message.String())
-	var err error = nil
+	/*bytes := randomizeData()
+	var err error = nil*/
 
 	if err == nil {
 		for _, topic := range Configuration.Topics {
@@ -102,7 +89,17 @@ func broadcastMessage(messenger p2p.Messenger) { //, waitGroup *sync.WaitGroup) 
 	}
 }
 
-func generateTransaction() ([]byte, error) {
+func randomizeData() []byte {
+	randomNumber := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(1000000)
+	var message strings.Builder
+	message.WriteString(Configuration.Data)
+	message.WriteString(strconv.Itoa(randomNumber))
+	bytes := []byte(message.String())
+
+	return bytes
+}
+
+func generateTransaction(nonce uint64) ([]byte, error) {
 	hexSender, err := generateAddress()
 	if err != nil {
 		return nil, err
@@ -114,11 +111,11 @@ func generateTransaction() ([]byte, error) {
 	}
 
 	tx := transaction.Transaction{
-		Nonce:    1,
+		Nonce:    nonce,
 		SndAddr:  hexSender,
 		RcvAddr:  hexReceiver,
 		Value:    new(big.Int).SetInt64(1000000000),
-		Data:     []byte(Configuration.Data),
+		Data:     []byte(randomizeData()),
 		GasPrice: 200000000000,
 		GasLimit: 50000,
 	}

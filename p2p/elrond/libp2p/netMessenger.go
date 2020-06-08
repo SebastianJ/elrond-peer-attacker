@@ -107,12 +107,13 @@ func NewNetworkMessenger(args ArgsNetworkMessenger) (*networkMessenger, error) {
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(address),
 		libp2p.Identity(p2pPrivKey),
-		libp2p.DefaultMuxers,
-		libp2p.DefaultSecurity,
-		libp2p.DefaultTransports,
+		//libp2p.DefaultMuxers,
+		//libp2p.DefaultSecurity,
+		//libp2p.DefaultTransports,
 		//we need the disable relay option in order to save the node's bandwidth as much as possible
 		//libp2p.DisableRelay(),
 		libp2p.NATPortMap(),
+		libp2p.EnableRelay(),
 	}
 
 	setupExternalP2PLoggers()
