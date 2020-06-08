@@ -246,18 +246,18 @@ func performWork(messenger p2p.Messenger) {
 	var waitGroup sync.WaitGroup
 
 	for i := 0; i <= messageCount; i++ {
-		waitGroup.Add(1)
+		//waitGroup.Add(1)
 		go broadcastMessage(messenger, &waitGroup)
 	}
 
-	waitGroup.Wait()
+	//waitGroup.Wait()
 }
 
 func broadcastMessage(messenger p2p.Messenger, waitGroup *sync.WaitGroup) {
-	defer waitGroup.Done()
-	//bytes, err := generateTransaction()
-	bytes := []byte(txData)
-	var err error = nil
+	//defer waitGroup.Done()
+	bytes, err := generateTransaction()
+	//bytes := []byte(txData)
+	//var err error = nil
 
 	if err == nil {
 		for _, topic := range topics {
