@@ -21,7 +21,8 @@ import (
 	"github.com/ElrondNetwork/elrond-go/display"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
-	"github.com/SebastianJ/elrond-libp2p-attacker/utils"
+	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/libp2p"
+	"github.com/SebastianJ/elrond-peer-attacker/utils"
 	"github.com/urfave/cli"
 )
 
@@ -306,12 +307,12 @@ func generateAddress() ([]byte, error) {
 }
 
 func createNode(p2pConfig config.P2PConfig) (p2p.Messenger, error) {
-	arg := libp2p.ArgsNetworkMessenger{
+	arg := epa_libp2p.ArgsNetworkMessenger{
 		ListenAddress: libp2p.ListenAddrWithIp4AndTcp,
 		P2pConfig:     p2pConfig,
 	}
 
-	return libp2p.NewNetworkMessenger(arg)
+	return epa_libp2p.NewNetworkMessenger(arg)
 }
 
 func displayMessengerInfo(messenger p2p.Messenger) {

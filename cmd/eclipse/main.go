@@ -16,7 +16,7 @@ import (
 	"github.com/ElrondNetwork/elrond-go/display"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
-	"github.com/SebastianJ/elrond-libp2p-attacker/utils"
+	"github.com/SebastianJ/elrond-peer-attacker/utils"
 	"github.com/urfave/cli"
 )
 
