@@ -14,6 +14,7 @@ import (
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/data/transaction"
 	"github.com/ElrondNetwork/elrond-go/display"
+	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
@@ -80,8 +81,7 @@ func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sy
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
 			go messenger.BroadcastOnChannel(
-				//node.SendTransactionsPipe,
-				topic,
+				node.SendTransactionsPipe,
 				topic,
 				bytes,
 			)
