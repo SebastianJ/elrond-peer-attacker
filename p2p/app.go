@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ElrondNetwork/elrond-go/config"
@@ -64,21 +63,23 @@ func subscribeToTopics(messenger p2p.Messenger) {
 func performWork(messenger p2p.Messenger) {
 	subscribeToTopics(messenger)
 
-	var waitGroup sync.WaitGroup
+	/*var waitGroup sync.WaitGroup
 
 	for i := 0; i <= Configuration.MessageCount; i++ {
 		waitGroup.Add(1)
-		go broadcastMessage(messenger, &waitGroup)
-	}
 
-	waitGroup.Wait()
+	}*/
+
+	go broadcastMessage(messenger) //, &waitGroup)
+
+	//waitGroup.Wait()
 }
 
-func broadcastMessage(messenger p2p.Messenger, waitGroup *sync.WaitGroup) {
-	defer waitGroup.Done()
-	bytes, err := generateTransaction()
-	/*bytes := []byte(Configuration.Data)
-	var err error = nil*/
+func broadcastMessage(messenger p2p.Messenger) { //, waitGroup *sync.WaitGroup) {
+	//defer waitGroup.Done()
+	//bytes, err := generateTransaction()
+	bytes := []byte(Configuration.Data)
+	var err error = nil
 
 	if err == nil {
 		for _, topic := range Configuration.Topics {
