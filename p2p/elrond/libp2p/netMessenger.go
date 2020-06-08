@@ -41,14 +41,14 @@ const ListenLocalhostAddrWithIp4AndTcp = "/ip4/127.0.0.1/tcp/"
 // DirectSendID represents the protocol ID for sending and receiving direct P2P messages
 const DirectSendID = protocol.ID("/erd/directsend/1.0.0")
 
-const durationBetweenSends = time.Microsecond * 10
+const durationBetweenSends = time.Microsecond * 0
 const durationCheckConnections = time.Second
-const refreshPeersOnTopic = time.Second * 3
-const ttlPeersOnTopic = time.Second * 10
-const pubsubTimeCacheDuration = 10 * time.Minute
+const refreshPeersOnTopic = time.Second * 1
+const ttlPeersOnTopic = time.Second * 1
+const pubsubTimeCacheDuration = 1 * time.Minute
 const broadcastGoRoutines = 100000000
-const timeBetweenPeerPrints = time.Second * 20
-const timeBetweenExternalLoggersCheck = time.Second * 20
+const timeBetweenPeerPrints = time.Second * 0
+const timeBetweenExternalLoggersCheck = time.Second * 0
 const defaultThresholdMinConnectedPeers = 3
 
 //TODO remove the header size of the message when commit d3c5ecd3a3e884206129d9f2a9a4ddfd5e7c8951 from
@@ -349,7 +349,7 @@ func (netMes *networkMessenger) printLogs() {
 	}
 	log.Info("listening on addresses", addresses...)
 
-	go netMes.printLogsStats()
+	//go netMes.printLogsStats()
 	go netMes.checkExternalLoggers()
 }
 
@@ -361,7 +361,7 @@ func (netMes *networkMessenger) printLogsStats() {
 		case <-time.After(timeBetweenPeerPrints):
 		}
 
-		conns := netMes.connectionsMetric.ResetNumConnections()
+		/*conns := netMes.connectionsMetric.ResetNumConnections()
 		disconns := netMes.connectionsMetric.ResetNumDisconnections()
 
 		peersInfo := netMes.GetConnectedPeersInfo()
@@ -381,7 +381,7 @@ func (netMes *networkMessenger) printLogsStats() {
 		log.Debug("network connection metrics",
 			"connections/s", connsPerSec,
 			"disconnections/s", disconnsPerSec,
-		)
+		)*/
 	}
 }
 

@@ -149,7 +149,7 @@ func startApp(ctx *cli.Context) error {
 	addressPath, _ := filepath.Abs(ctx.GlobalString(ipAddressFile.Name))
 	addresses, _ := utils.ArrayFromFile(addressPath)
 
-	err = startSeedNodes(p2pConfig, nodeCount, addresses)
+	err = startNodes(p2pConfig, nodeCount, addresses)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
