@@ -23,8 +23,8 @@ import (
 
 var _ p2p.DirectSender = (*directSender)(nil)
 
-const timeSeenMessages = time.Second * 120
-const maxMutexes = 10000
+const timeSeenMessages = time.Second * 30
+const maxMutexes = 10000000
 
 type directSender struct {
 	counter        uint64

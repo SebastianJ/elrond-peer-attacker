@@ -131,7 +131,7 @@ func setupP2PConfig(ctx *cli.Context) error {
 	p2p.Configuration.P2P.ElrondConfig = p2pConfig
 	p2p.Configuration.P2P.Peers = ctx.GlobalInt(count.Name)
 	p2p.Configuration.P2P.Topics = p2p.Topics
-	p2p.Configuration.P2P.ConnectionWait = 30
+	p2p.Configuration.P2P.ConnectionWait = 60
 	p2p.Configuration.P2P.MessageCount = 100000
 	p2p.Configuration.P2P.Shards = []string{
 		"META",

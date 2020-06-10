@@ -79,7 +79,9 @@ func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sy
 	/*bytes := randomizeData()
 	var err error = nil*/
 
-	if err == nil {
+	if err != nil {
+		fmt.Printf("Error occurred while generating transaction - error: %s\n", err.Error())
+	} else {
 		for _, topic := range Configuration.P2P.Topics {
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
