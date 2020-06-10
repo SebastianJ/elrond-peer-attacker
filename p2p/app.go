@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/display"
+	"github.com/ElrondNetwork/elrond-go/marshal"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
@@ -122,8 +122,9 @@ func generateTransaction(nonce uint64) ([]byte, error) {
 	}
 
 	tx.Signature = signature
+	marshalizer := &marshal.GogoProtoMarshalizer{}
 
-	txBuff, err := json.Marshal(tx)
+	txBuff, err := marshalizer.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}
