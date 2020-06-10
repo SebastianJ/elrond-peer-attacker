@@ -21,7 +21,7 @@ var (
 		"unsignedTransactions_1_META",
 		"rewardsTransactions_0_META",
 		"rewardsTransactions_1_META",
-		/*"shardBlocks_0_META",
+		"shardBlocks_0_META",
 		"shardBlocks_1_META",
 		"txBlockBodies_ALL",
 		"validatorTrieNodes_META",
@@ -31,7 +31,7 @@ var (
 		"consensus_0",
 		"consensus_1",
 		"consensus_meta",
-		"heartbeat",*/
+		"heartbeat",
 	}
 )
 
