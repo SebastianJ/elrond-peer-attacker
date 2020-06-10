@@ -1,10 +1,11 @@
 module github.com/SebastianJ/elrond-peer-attacker
 
-go 1.13
+go 1.14
 
 require (
-	github.com/ElrondNetwork/elrond-go v1.0.126
+	github.com/ElrondNetwork/elrond-go v1.0.128
 	github.com/ElrondNetwork/elrond-go-logger v1.0.3
+	github.com/SebastianJ/elrond-sdk v0.0.0-20200610122127-801a9bbdc87c
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/gogo/protobuf v1.3.1
 	github.com/ipfs/go-ds-badger v0.2.3

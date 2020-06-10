@@ -3,6 +3,7 @@ package libp2p
 import (
 	"sync"
 
+	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/ElrondNetwork/elrond-go/core/check"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	erd_libp2p "github.com/ElrondNetwork/elrond-go/p2p/libp2p"
@@ -19,13 +20,13 @@ type connectionMonitorWrapper struct {
 	erd_libp2p.ConnectionMonitor
 	network          network.Network
 	mutPeerBlackList sync.RWMutex
-	peerBlackList    p2p.BlacklistHandler
+	peerBlackList    p2p.PeerBlacklistHandler
 }
 
 func newConnectionMonitorWrapper(
 	network network.Network,
 	connMonitor erd_libp2p.ConnectionMonitor,
-	blackList p2p.BlacklistHandler,
+	blackList p2p.PeerBlacklistHandler,
 ) *connectionMonitorWrapper {
 	return &connectionMonitorWrapper{
 		ConnectionMonitor: connMonitor,
@@ -51,7 +52,7 @@ func (cmw *connectionMonitorWrapper) Connected(netw network.Network, conn networ
 	cmw.mutPeerBlackList.RUnlock()
 
 	pid := conn.RemotePeer()
-	if peerBlackList.Has(pid.Pretty()) {
+	if peerBlackList.Has(core.PeerID(pid)) {
 		log.Debug("dropping connection to black listed peer",
 			"pid", pid.Pretty(),
 		)
@@ -86,7 +87,7 @@ func (cmw *connectionMonitorWrapper) CheckConnectionsBlocking() {
 	cmw.mutPeerBlackList.RUnlock()
 
 	for _, pid := range peers {
-		if blacklistHandler.Has(pid.Pretty()) {
+		if blacklistHandler.Has(core.PeerID(pid)) {
 			log.Debug("dropping connection to black listed peer",
 				"pid", pid.Pretty(),
 			)
@@ -96,7 +97,7 @@ func (cmw *connectionMonitorWrapper) CheckConnectionsBlocking() {
 }
 
 // SetBlackListHandler sets the black list handler
-func (cmw *connectionMonitorWrapper) SetBlackListHandler(handler p2p.BlacklistHandler) error {
+func (cmw *connectionMonitorWrapper) SetBlackListHandler(handler p2p.PeerBlacklistHandler) error {
 	if check.IfNil(handler) {
 		return p2p.ErrNilPeerBlacklistHandler
 	}

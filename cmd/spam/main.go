@@ -9,6 +9,9 @@ import (
 	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/SebastianJ/elrond-peer-attacker/p2p"
 	"github.com/SebastianJ/elrond-peer-attacker/utils"
+	"github.com/SebastianJ/elrond-sdk/api"
+	"github.com/SebastianJ/elrond-sdk/transactions"
+	sdkWallet "github.com/SebastianJ/elrond-sdk/wallet"
 	"github.com/urfave/cli"
 )
 
@@ -16,7 +19,7 @@ var (
 	// count defines the number of seed nodes to launch
 	count = cli.IntFlag{
 		Name:  "count",
-		Usage: "How many seed nodes to launch",
+		Usage: "How many nodes to launch",
 		Value: 100,
 	}
 
@@ -38,15 +41,28 @@ var (
 		Value: "./data/data.txt",
 	}
 
-	p2pConfigurationPath = "./config/p2p.toml"
-	txData               = ""
+	walletPath = cli.StringFlag{
+		Name:  "wallet",
+		Usage: "Wallet PEM file to use for sending transactions",
+		Value: "./keys/initialBalancesSk.pem",
+	}
+
+	economicsConfigurationPath = cli.StringFlag{
+		Name:  "economics-config",
+		Usage: "Path to economics.toml config file",
+		Value: "./config/economics.toml",
+	}
+
+	p2pConfigurationPath  = "./config/p2p.toml"
+	econConfigurationPath = "./config/economics.toml"
+	txData                = ""
 )
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{count, ipAddressFile, configurationPath, dataPath}
+	app.Flags = []cli.Flag{count, ipAddressFile, configurationPath, economicsConfigurationPath, dataPath, walletPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -69,9 +85,36 @@ func main() {
 func startApp(ctx *cli.Context) error {
 	fmt.Println("Starting app...")
 
+	if err := setupP2PConfig(ctx); err != nil {
+		return err
+	}
+
+	fmt.Println("setupP2PConfig done...")
+
+	if err := setupAccountConfig(ctx); err != nil {
+		return err
+	}
+
+	fmt.Println("setupAccountConfig done...")
+
+	if err := p2p.StartNodes(); err != nil {
+		return err
+	}
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	<-sigs
+
+	fmt.Println("terminating at user's signal...")
+
+	return nil
+}
+
+func setupP2PConfig(ctx *cli.Context) error {
 	if ctx.IsSet(configurationPath.Name) {
 		p2pConfigurationPath = ctx.GlobalString(configurationPath.Name)
 	}
+	fmt.Printf("p2pConfigurationPath: %s\n", p2pConfigurationPath)
 
 	p2pConfig, err := core.LoadP2PConfig(p2pConfigurationPath)
 	if err != nil {
@@ -87,27 +130,58 @@ func startApp(ctx *cli.Context) error {
 			return err
 		}
 
-		p2p.Configuration.Data = fileData
+		p2p.Configuration.P2P.Data = fileData
 	}
 
-	p2p.Configuration.ElrondConfig = p2pConfig
-	p2p.Configuration.Peers = ctx.GlobalInt(count.Name)
-	p2p.Configuration.Topics = p2p.Topics
-	p2p.Configuration.ConnectionWait = 30
-	p2p.Configuration.MessageCount = 100000
-	p2p.Configuration.Shards = []string{
+	p2p.Configuration.P2P.ElrondConfig = p2pConfig
+	p2p.Configuration.P2P.Peers = ctx.GlobalInt(count.Name)
+	p2p.Configuration.P2P.Topics = p2p.Topics
+	p2p.Configuration.P2P.ConnectionWait = 30
+	p2p.Configuration.P2P.MessageCount = 100000
+	p2p.Configuration.P2P.Shards = []string{
 		"META",
 		"0",
 		"1",
 	}
 
-	err = p2p.StartNodes()
+	return nil
+}
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	<-sigs
+func setupAccountConfig(ctx *cli.Context) error {
+	path := ctx.GlobalString(walletPath.Name)
 
-	fmt.Println("terminating at user's signal...")
+	wallet, err := sdkWallet.Decrypt(path)
+	if err != nil {
+		return err
+	}
+
+	client := api.Client{
+		Host:                 "https://wallet-api.elrond.com",
+		ForceAPINonceLookups: true,
+	}
+	client.Initialize()
+
+	if ctx.IsSet(economicsConfigurationPath.Name) {
+		econConfigurationPath = ctx.GlobalString(economicsConfigurationPath.Name)
+	}
+
+	defaultGasParams, err := transactions.ParseGasSettings(econConfigurationPath)
+	if err != nil {
+		return err
+	}
+
+	account, err := client.GetAccount(wallet.Address)
+	if err != nil {
+		return err
+	}
+	nonce := uint64(account.Nonce)
+
+	p2p.Configuration.Account = p2p.AccountConfig{
+		Wallet:    wallet,
+		Nonce:     nonce,
+		GasParams: defaultGasParams,
+		Client:    client,
+	}
 
 	return nil
 }

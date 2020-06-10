@@ -2,9 +2,7 @@ package p2p
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"math/big"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -12,18 +10,19 @@ import (
 	"time"
 
 	"github.com/ElrondNetwork/elrond-go/config"
-	"github.com/ElrondNetwork/elrond-go/data/transaction"
 	"github.com/ElrondNetwork/elrond-go/display"
+	"github.com/ElrondNetwork/elrond-go/marshal"
 	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
+	sdkTransactions "github.com/SebastianJ/elrond-sdk/transactions"
 )
 
 func StartNodes() error {
 	fmt.Println("Starting new node....")
 
-	for i := 0; i <= Configuration.Peers; i++ {
+	for i := 0; i <= Configuration.P2P.Peers; i++ {
 		go StartNode()
 	}
 
@@ -31,7 +30,7 @@ func StartNodes() error {
 }
 
 func StartNode() error {
-	messenger, err := createNode(*Configuration.ElrondConfig)
+	messenger, err := createNode(*Configuration.P2P.ElrondConfig)
 	if err != nil {
 		return err
 	}
@@ -41,14 +40,14 @@ func StartNode() error {
 		return err
 	}
 
-	time.Sleep(time.Second * time.Duration(Configuration.ConnectionWait))
+	time.Sleep(time.Second * time.Duration(Configuration.P2P.ConnectionWait))
 
 	subscribeToTopics(messenger)
 	displayMessengerInfo(messenger)
 
-	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", Configuration.ConnectionWait)
+	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", Configuration.P2P.ConnectionWait)
 
-	nonce := uint64(1)
+	nonce := Configuration.Account.Nonce
 
 	for {
 		select {
@@ -64,7 +63,7 @@ func StartNode() error {
 }
 
 func subscribeToTopics(messenger p2p.Messenger) {
-	for _, topic := range Configuration.Topics {
+	for _, topic := range Configuration.P2P.Topics {
 		messenger.CreateTopic(topic, true)
 	}
 }
@@ -77,7 +76,7 @@ func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sy
 	var err error = nil*/
 
 	if err == nil {
-		for _, topic := range Configuration.Topics {
+		for _, topic := range Configuration.P2P.Topics {
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
 			go messenger.BroadcastOnChannel(
@@ -92,7 +91,7 @@ func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sy
 func randomizeData() []byte {
 	randomNumber := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(1000000)
 	var message strings.Builder
-	message.WriteString(Configuration.Data)
+	message.WriteString(Configuration.P2P.Data)
 	message.WriteString(strconv.Itoa(randomNumber))
 	bytes := []byte(message.String())
 
@@ -100,27 +99,28 @@ func randomizeData() []byte {
 }
 
 func generateTransaction(nonce uint64) ([]byte, error) {
-	hexSender, err := generateAddress()
+	gasParams := Configuration.Account.GasParams
+
+	tx, _, err := sdkTransactions.GenerateTransaction(
+		Configuration.Account.Wallet,
+		"erd1hlccprf7e89gfzq0r7z2gfypjr9dm7ya3sw4m36r0gaxllm507vsxqy9zk",
+		0.0,
+		false,
+		int64(nonce),
+		Configuration.P2P.Data,
+		gasParams,
+		Configuration.Account.Client,
+	)
+
+	signature, err := sdkTransactions.SignTransaction(Configuration.Account.Wallet, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	hexReceiver, err := generateAddress()
-	if err != nil {
-		return nil, err
-	}
+	tx.Signature = signature
 
-	tx := transaction.Transaction{
-		Nonce:    nonce,
-		SndAddr:  hexSender,
-		RcvAddr:  hexReceiver,
-		Value:    new(big.Int).SetInt64(1000000000),
-		Data:     []byte(randomizeData()),
-		GasPrice: 200000000000,
-		GasLimit: 50000,
-	}
-
-	txBuff, err := json.Marshal(&tx)
+	marshaler := &marshal.TxJsonMarshalizer{}
+	txBuff, err := tx.GetDataForSigning(Configuration.Account.Wallet.Converter, marshaler)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func displayMessengerInfo(messenger p2p.Messenger) {
 	tbl2, _ := display.CreateTableString(headerConnectedAddresses, connAddresses)
 	fmt.Println(tbl2)
 
-	for _, topic := range Configuration.Topics {
+	for _, topic := range Configuration.P2P.Topics {
 		peers := messenger.ConnectedPeersOnTopic(topic)
 		fmt.Printf("Connected peers on topic %s: %d\n\n", topic, len(peers))
 	}

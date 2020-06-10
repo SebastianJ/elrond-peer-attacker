@@ -53,11 +53,11 @@ func generateTopics() []string {
 		if baseTopic == "txBlockBodies" {
 			topics = append(topics, fmt.Sprintf("%s_ALL", baseTopic))
 		} else {
-			for _, shard := range Configuration.Shards {
+			for _, shard := range Configuration.P2P.Shards {
 				shard = strings.ToUpper(shard)
 				topics = append(topics, fmt.Sprintf("%s_%s", baseTopic, shard))
 
-				for _, innerShard := range Configuration.Shards {
+				for _, innerShard := range Configuration.P2P.Shards {
 					innerShard = strings.ToUpper(innerShard)
 					if innerShard != shard {
 						topics = append(topics, fmt.Sprintf("%s_%s_%s", baseTopic, shard, innerShard))
