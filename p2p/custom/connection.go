@@ -21,7 +21,7 @@ var (
 	pages            int    = 1
 	totalCount       int    = 0
 	processed        int    = 0
-	waitAfterConnect int    = 30
+	waitAfterConnect int    = 60
 )
 
 // ConnectPeers - set up the peer connections for the required amount of peers

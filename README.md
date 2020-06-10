@@ -19,4 +19,6 @@ To build the binary: `cd cmd/seednodeddos && go build`
 Start 500 DDoS pingers: `./seednodeddos --count 500`
 
 ## P2P Spammer:
-`./dist/spam --count 1 --config config/p2p.toml --economics-config config/economics.toml --data data/data.txt`
+```
+./dist/spam --count 50 --config config/p2p.toml --economics-config config/economics.toml --data data/data.txt
+```

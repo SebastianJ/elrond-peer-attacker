@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/display"
-	"github.com/ElrondNetwork/elrond-go/marshal"
 	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
@@ -119,8 +119,7 @@ func generateTransaction(nonce uint64) ([]byte, error) {
 
 	tx.Signature = signature
 
-	marshaler := &marshal.TxJsonMarshalizer{}
-	txBuff, err := tx.GetDataForSigning(Configuration.Account.Wallet.Converter, marshaler)
+	txBuff, err := json.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}
