@@ -12,21 +12,26 @@ import (
 
 // RandomElementFromArray fetches a random element from an array
 func RandomElementFromArray(items []string) string {
-	rand.Seed(time.Now().Unix())
-	item := items[rand.Intn(len(items))]
+	randomIndex := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(len(items))
+	item := items[randomIndex]
 
 	return item
 }
 
 // ArrayFromFile - fetch a list of ip addresses from a specified file
-func ArrayFromFile(filePath string) ([]string, error) {
+func ArrayFromFile(filePath string) (lines []string, err error) {
 	data, err := ReadFileToString(filePath)
-
 	if err != nil {
 		return nil, err
 	}
 
-	lines := strings.Split(string(data), "\n")
+	if len(data) > 0 {
+		lines = strings.Split(string(data), "\n")
+		// Remove extra line introduced by strings.Split - see https://play.golang.org/p/sNsAc2xVDT
+		if strings.Contains(data, "\n") {
+			lines = lines[:len(lines)-1]
+		}
+	}
 
 	return lines, nil
 }

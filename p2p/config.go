@@ -32,6 +32,7 @@ type P2PConfig struct {
 	Data           string
 	ConnectionWait int
 	Shards         []string
+	TxReceivers    []string
 }
 
 type AccountConfig struct {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/ElrondNetwork/elrond-go/core"
@@ -26,7 +27,13 @@ var (
 	ipAddressFile = cli.StringFlag{
 		Name:  "ip-address-file",
 		Usage: "Which file to use for reading ip addresses to launch seed nodes on",
-		Value: "../../data/ips.txt",
+		Value: "./data/ips.txt",
+	}
+
+	receiversFile = cli.StringFlag{
+		Name:  "receivers",
+		Usage: "Which file to use for reading receiver addresses to send txs to",
+		Value: "./data/receivers.txt",
 	}
 
 	configurationPath = cli.StringFlag{
@@ -62,7 +69,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{count, ipAddressFile, configurationPath, economicsConfigurationPath, dataPath, walletPath}
+	app.Flags = []cli.Flag{count, ipAddressFile, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -92,6 +99,8 @@ func startApp(ctx *cli.Context) error {
 	if err := setupAccountConfig(ctx); err != nil {
 		return err
 	}
+
+	p2p.Configuration.Concurrency = 10000
 
 	if err := p2p.StartNodes(); err != nil {
 		return err
@@ -138,6 +147,22 @@ func setupP2PConfig(ctx *cli.Context) error {
 		"0",
 		"1",
 	}
+
+	addressPath, err := filepath.Abs(ctx.GlobalString(receiversFile.Name))
+	if err != nil {
+		return err
+	}
+
+	receivers, err := utils.ArrayFromFile(addressPath)
+	if err != nil {
+		return err
+	}
+
+	if len(receivers) == 0 {
+		receivers = []string{"erd1mp543xj384uzehwzp360wy2y86q22svdm022lwxaryg8cqmxqwvszjnrf7"}
+	}
+
+	p2p.Configuration.P2P.TxReceivers = receivers
 
 	return nil
 }

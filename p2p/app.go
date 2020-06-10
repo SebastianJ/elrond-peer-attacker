@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -11,17 +10,17 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/display"
-	"github.com/ElrondNetwork/elrond-go/marshal"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
+	"github.com/SebastianJ/elrond-peer-attacker/utils"
 	sdkTransactions "github.com/SebastianJ/elrond-sdk/transactions"
 )
 
 func StartNodes() error {
 	fmt.Println("Starting new node....")
 
-	for i := 0; i <= Configuration.P2P.Peers; i++ {
+	for i := 0; i < Configuration.P2P.Peers; i++ {
 		go StartNode()
 	}
 
@@ -39,18 +38,19 @@ func StartNode() error {
 		return err
 	}
 
+	fmt.Printf("Sleeping %d seconds to let the peer connect to other peers\n", Configuration.P2P.ConnectionWait)
 	time.Sleep(time.Second * time.Duration(Configuration.P2P.ConnectionWait))
 
 	subscribeToTopics(messenger)
 	displayMessengerInfo(messenger)
 
-	fmt.Printf("Sleeping %d seconds before proceeding to start sending messages\n", Configuration.P2P.ConnectionWait)
-
 	nonce := Configuration.Account.Nonce
 
 	for {
-		for i := 0; i < 100000; i++ {
-			broadcastMessage(messenger, nonce)
+		receiver := randomizeReceiverAddress()
+
+		for i := 0; i < Configuration.Concurrency; i++ {
+			broadcastMessage(messenger, receiver, nonce)
 			nonce++
 		}
 
@@ -72,9 +72,9 @@ func subscribeToTopics(messenger p2p.Messenger) {
 	}
 }
 
-func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sync.WaitGroup) {
+func broadcastMessage(messenger p2p.Messenger, receiver string, nonce uint64) { //, waitGroup *sync.WaitGroup) {
 	//defer waitGroup.Done()
-	bytes, err := generateTransaction(nonce)
+	bytes, err := generateTransaction(receiver, nonce)
 
 	/*bytes := randomizeData()
 	var err error = nil*/
@@ -94,23 +94,19 @@ func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sy
 	}
 }
 
-func randomizeData() []byte {
-	randomNumber := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(1000000)
-	var message strings.Builder
-	message.WriteString(Configuration.P2P.Data)
-	message.WriteString(strconv.Itoa(randomNumber))
-	bytes := []byte(message.String())
-
-	return bytes
+func randomizeReceiverAddress() string {
+	return utils.RandomElementFromArray(Configuration.P2P.TxReceivers)
 }
 
-func generateTransaction(nonce uint64) ([]byte, error) {
+func generateTransaction(receiver string, nonce uint64) ([]byte, error) {
+	fmt.Printf("Generating transaction - receiver: %s, nonce: %d\n", receiver, nonce)
+
 	gasParams := Configuration.Account.GasParams
 
 	tx, _, err := sdkTransactions.GenerateTransaction(
 		Configuration.Account.Wallet,
-		"erd1hlccprf7e89gfzq0r7z2gfypjr9dm7ya3sw4m36r0gaxllm507vsxqy9zk",
-		0.0,
+		receiver,
+		0.1,
 		false,
 		int64(nonce),
 		Configuration.P2P.Data,
@@ -124,9 +120,8 @@ func generateTransaction(nonce uint64) ([]byte, error) {
 	}
 
 	tx.Signature = signature
-	marshalizer := &marshal.GogoProtoMarshalizer{}
 
-	txBuff, err := marshalizer.Marshal(tx)
+	txBuff, err := tx.Marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +129,14 @@ func generateTransaction(nonce uint64) ([]byte, error) {
 	return txBuff, err
 }
 
-func generateAddress() ([]byte, error) {
-	return hex.DecodeString("000000000000000000005fed9c659422cd8429ce92f8973bba2a9fb51e0eb3a1")
+func randomizeData() []byte {
+	randomNumber := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(1000000)
+	var message strings.Builder
+	message.WriteString(Configuration.P2P.Data)
+	message.WriteString(strconv.Itoa(randomNumber))
+	bytes := []byte(message.String())
+
+	return bytes
 }
 
 func createNode(p2pConfig config.P2PConfig) (p2p.Messenger, error) {
