@@ -12,7 +12,6 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/display"
-	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
@@ -50,7 +49,12 @@ func StartNode() error {
 	nonce := Configuration.Account.Nonce
 
 	for {
-		select {
+		for i := 0; i < 100000; i++ {
+			broadcastMessage(messenger, nonce)
+			nonce++
+		}
+
+		/*select {
 		case <-time.After(time.Second * 10):
 			subscribeToTopics(messenger)
 		case <-time.After(time.Second * 35):
@@ -58,7 +62,7 @@ func StartNode() error {
 		default:
 			broadcastMessage(messenger, nonce)
 			nonce++
-		}
+		}*/
 	}
 }
 
@@ -80,7 +84,7 @@ func broadcastMessage(messenger p2p.Messenger, nonce uint64) { //, waitGroup *sy
 			fmt.Printf("Sending message of %d bytes to topic/channel %s\n", len(bytes), topic)
 
 			go messenger.BroadcastOnChannel(
-				node.SendTransactionsPipe,
+				topic,
 				topic,
 				bytes,
 			)
