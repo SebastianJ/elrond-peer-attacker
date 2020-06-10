@@ -89,13 +89,9 @@ func startApp(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("setupP2PConfig done...")
-
 	if err := setupAccountConfig(ctx); err != nil {
 		return err
 	}
-
-	fmt.Println("setupAccountConfig done...")
 
 	if err := p2p.StartNodes(); err != nil {
 		return err
@@ -114,7 +110,6 @@ func setupP2PConfig(ctx *cli.Context) error {
 	if ctx.IsSet(configurationPath.Name) {
 		p2pConfigurationPath = ctx.GlobalString(configurationPath.Name)
 	}
-	fmt.Printf("p2pConfigurationPath: %s\n", p2pConfigurationPath)
 
 	p2pConfig, err := core.LoadP2PConfig(p2pConfigurationPath)
 	if err != nil {
