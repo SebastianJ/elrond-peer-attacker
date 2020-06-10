@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -59,6 +60,6 @@ func ReadFileToString(filePath string) (string, error) {
 
 		return string(data), nil
 	} else {
-		return "", nil
+		return "", fmt.Errorf("file %s doesn't exist", filePath)
 	}
 }
