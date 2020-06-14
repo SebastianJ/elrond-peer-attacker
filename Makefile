@@ -13,13 +13,13 @@ env := GO111MODULE=on
 DIR := ${CURDIR}
 
 ddos:
-	$(env) go build -o $(dist)/ddos -ldflags="$(ldflags)" cmd/seednodeddos/main.go
+	source $(shell go env GOPATH)/src/github.com/SebastianJ/elrond-sdk/scripts/bls_build_flags.sh && $(env) go build -o $(dist)/ddos -ldflags="$(ldflags)" cmd/seednodeddos/main.go
 
 eclipse:
-	$(env) go build -o $(dist)/eclipse -ldflags="$(ldflags)" cmd/eclipse/main.go
+	source $(shell go env GOPATH)/src/github.com/SebastianJ/elrond-sdk/scripts/bls_build_flags.sh && $(env) go build -o $(dist)/eclipse -ldflags="$(ldflags)" cmd/eclipse/main.go
 
 spam:
-	$(env) go build -o $(dist)/spam -ldflags="$(ldflags)" cmd/spam/main.go
+	source $(shell go env GOPATH)/src/github.com/SebastianJ/elrond-sdk/scripts/bls_build_flags.sh && $(env) go build -o $(dist)/spam -ldflags="$(ldflags)" cmd/spam/main.go
 
 .PHONY:clean
 

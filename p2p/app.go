@@ -10,6 +10,7 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/config"
 	"github.com/ElrondNetwork/elrond-go/display"
+	"github.com/ElrondNetwork/elrond-go/marshal"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
@@ -106,7 +107,7 @@ func generateTransaction(receiver string, nonce uint64) ([]byte, error) {
 	tx, _, err := sdkTransactions.GenerateTransaction(
 		Configuration.Account.Wallet,
 		receiver,
-		0.1,
+		0.0,
 		false,
 		int64(nonce),
 		Configuration.P2P.Data,
@@ -121,7 +122,9 @@ func generateTransaction(receiver string, nonce uint64) ([]byte, error) {
 
 	tx.Signature = signature
 
-	txBuff, err := tx.Marshal()
+	marshaler := &marshal.TxJsonMarshalizer{}
+
+	txBuff, err := marshaler.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}

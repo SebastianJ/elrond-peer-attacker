@@ -3,14 +3,13 @@ module github.com/SebastianJ/elrond-peer-attacker
 go 1.14
 
 require (
-	github.com/ElrondNetwork/elrond-go v1.0.128
+	github.com/ElrondNetwork/elrond-go v1.0.131
 	github.com/ElrondNetwork/elrond-go-logger v1.0.3
-	github.com/SebastianJ/elrond-sdk v0.0.0-20200610145356-1c11bf084d07
+	github.com/SebastianJ/elrond-sdk v0.0.0-20200612183308-d72cce7ca573
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/gogo/protobuf v1.3.1
 	github.com/ipfs/go-ds-badger v0.2.3
 	github.com/ipfs/go-log v1.0.4
-	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/libp2p/go-libp2p v0.9.2
 	github.com/libp2p/go-libp2p-core v0.5.6
 	github.com/libp2p/go-libp2p-discovery v0.4.0
