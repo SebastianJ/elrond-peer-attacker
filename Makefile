@@ -12,6 +12,9 @@ dist := ./dist
 env := GO111MODULE=on
 DIR := ${CURDIR}
 
+ddos:
+	$(env) go build -o $(dist)/ddos -ldflags="$(ldflags)" cmd/seednodeddos/main.go
+
 eclipse:
 	$(env) go build -o $(dist)/eclipse -ldflags="$(ldflags)" cmd/eclipse/main.go
 

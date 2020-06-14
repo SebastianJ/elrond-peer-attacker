@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/libp2p/go-libp2p"
+	host "github.com/libp2p/go-libp2p-host"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	multiaddr "github.com/multiformats/go-multiaddr"
@@ -40,10 +42,16 @@ VERSION:
 	startPort = cli.IntFlag{
 		Name:  "start-port",
 		Usage: "Which node to use as a basis for starting the pingers",
-		Value: 49152,
+		Value: 13000,
 	}
 
-	p2pConfigurationFile = "../../config/p2p.toml"
+	configurationPath = cli.StringFlag{
+		Name:  "config",
+		Usage: "Path to p2p.toml config file",
+		Value: "./config/p2p.toml",
+	}
+
+	p2pConfigurationPath = "./config/p2p.toml"
 )
 
 func main() {
@@ -51,7 +59,7 @@ func main() {
 	cli.AppHelpTemplate = seedNodeHelpTemplate
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{count, startPort}
+	app.Flags = []cli.Flag{count, startPort, configurationPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -72,43 +80,50 @@ func main() {
 }
 
 func startApp(ctx *cli.Context) error {
-	p2pConfig, err := core.LoadP2PConfig(p2pConfigurationFile)
+	handleShutdown()
+
+	if ctx.IsSet(configurationPath.Name) {
+		p2pConfigurationPath = ctx.GlobalString(configurationPath.Name)
+	}
+
+	p2pConfig, err := core.LoadP2PConfig(p2pConfigurationPath)
 	if err != nil {
 		fmt.Println("Failed to parse P2P Config - make sure the config file exists!")
 		os.Exit(1)
 	}
 
-	seedNodeAddress := p2pConfig.KadDhtPeerDiscovery.InitialPeerList[0]
-
-	fmt.Println(fmt.Sprintf("Using seed node address: %s", seedNodeAddress))
-
 	pingerCount := ctx.GlobalInt(count.Name)
 	pingerStartPort := ctx.GlobalInt(startPort.Name)
+	currentPort := pingerStartPort
+	maxPort := 65500
+	var waitGroup sync.WaitGroup
 
 	for i := 0; i <= pingerCount; i++ {
-		actualPort := pingerStartPort + i
-		go ddosSeedNode(actualPort, seedNodeAddress)
+		waitGroup.Add(1)
+		if currentPort >= maxPort {
+			currentPort = pingerStartPort
+		} else {
+			currentPort++
+		}
+		go ddosSeedNodes(currentPort, p2pConfig.KadDhtPeerDiscovery.InitialPeerList, &waitGroup)
 	}
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	<-sigs
-
-	fmt.Println("terminating at user's signal...")
+	waitGroup.Wait()
 
 	return nil
 }
 
-func ddosSeedNode(port int, seedNodeAddress string) {
+func ddosSeedNodes(port int, seedNodeAddresses []string, waitGroup *sync.WaitGroup) error {
+	defer waitGroup.Done()
 	ctx := context.Background()
 
 	node, err := libp2p.New(ctx,
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port)),
 		libp2p.Ping(false),
 	)
-
 	if err != nil {
-		panic(err)
+		fmt.Sprintf("Error: %s\n", err.Error())
+		return err
 	}
 
 	pingService := &ping.PingService{Host: node}
@@ -119,30 +134,61 @@ func ddosSeedNode(port int, seedNodeAddress string) {
 		Addrs: node.Addrs(),
 	}
 
-	addrs, _ := peerstore.InfoToP2pAddrs(peerInfo)
-	if err == nil {
-		fmt.Println("libp2p node address:", addrs[0])
-
-		addr, err := multiaddr.NewMultiaddr(seedNodeAddress)
-
-		if err == nil {
-			peer, err := peerstore.InfoFromP2pAddr(addr)
-
-			if err == nil {
-				err = node.Connect(ctx, *peer)
-
-				if err == nil {
-					ch := pingService.Ping(ctx, peer.ID)
-
-					for {
-						fmt.Println("sending ping message to", seedNodeAddress)
-						res := <-ch
-						fmt.Println("pinged", seedNodeAddress, "in", res.RTT)
-					}
-				} else {
-					fmt.Println("Failed to connnect to ", seedNodeAddress)
-				}
-			}
-		}
+	addrs, err := peerstore.InfoToP2pAddrs(peerInfo)
+	if err != nil {
+		fmt.Sprintf("Error: %s\n", err.Error())
+		return err
 	}
+
+	fmt.Println("libp2p node address:", addrs[0])
+
+	var innerWaitGroup sync.WaitGroup
+
+	for _, seedNodeAddress := range seedNodeAddresses {
+		innerWaitGroup.Add(1)
+		go ddosSeedNode(ctx, node, pingService, seedNodeAddress, &innerWaitGroup)
+	}
+
+	innerWaitGroup.Wait()
+
+	return nil
+}
+
+func ddosSeedNode(ctx context.Context, node host.Host, pingService *ping.PingService, seedNodeAddress string, innerWaitGroup *sync.WaitGroup) error {
+	defer innerWaitGroup.Done()
+	addr, err := multiaddr.NewMultiaddr(seedNodeAddress)
+	if err != nil {
+		fmt.Sprintf("Error: %s\n", err.Error())
+		return err
+	}
+
+	peer, err := peerstore.InfoFromP2pAddr(addr)
+	if err != nil {
+		fmt.Sprintf("Error: %s\n", err.Error())
+		return err
+	}
+
+	if err = node.Connect(ctx, *peer); err != nil {
+		fmt.Sprintf("Error: %s\n", err.Error())
+		return err
+	}
+
+	ch := pingService.Ping(ctx, peer.ID)
+
+	for {
+		fmt.Println("sending ping message to", seedNodeAddress)
+		res := <-ch
+		fmt.Println("pinged", seedNodeAddress, "in", res.RTT)
+	}
+
+	return nil
+}
+
+func handleShutdown() {
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		os.Exit(0)
+	}()
 }
