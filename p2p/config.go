@@ -23,6 +23,7 @@ type Config struct {
 // P2PConfig - p2p
 type P2PConfig struct {
 	ElrondConfig        *config.P2PConfig
+	Method              string
 	MessageCount        int
 	Bootnodes           []string
 	Peers               int
@@ -36,6 +37,7 @@ type P2PConfig struct {
 	ConnectionWait      int
 	Log                 bool
 	Shards              []string
+	ShardIDs            []uint32
 	TxReceivers         []string
 	TxMarshalizer       *marshal.TxJsonMarshalizer
 	InternalMarshalizer *marshal.GogoProtoMarshalizer

@@ -86,7 +86,10 @@ func BulkSendTransactionsFromShard(messenger p2p.Messenger, transactions [][]byt
 	}
 
 	topic := generateTopic(transactionTopic, senderShardID, receiverShardID)
-	messenger.CreateTopic(topic, true)
+
+	if !messenger.HasTopic(topic) {
+		messenger.CreateTopic(topic, true)
+	}
 
 	packets, err := dataPacker.PackDataInChunks(transactions, core.MaxBulkTransactionSize)
 	if err != nil {

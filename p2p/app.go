@@ -14,6 +14,7 @@ import (
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
+	"github.com/SebastianJ/elrond-peer-attacker/utils"
 	sdkWallet "github.com/SebastianJ/elrond-sdk/wallet"
 )
 
@@ -21,6 +22,7 @@ import (
 func StartPeers() error {
 	fmt.Println("Starting new peer....")
 
+	// Refactor this later - all of the various p2p exploits should have entirely separate starting points etc
 	for _, wallet := range Configuration.Account.Wallets {
 		go StartPeer(wallet)
 	}
@@ -52,7 +54,14 @@ func StartPeer(wallet sdkWallet.Wallet) error {
 			break
 		}
 
-		GenerateAndBulkSendTransactions(messenger, wallet)
+		switch Configuration.P2P.Method {
+		case "txs", "transaction", "transactions":
+			GenerateAndBulkSendTransactions(messenger, wallet)
+		case "hb", "heartbeat", "heartbeats":
+			BulkSendHeartbeats(messenger)
+		default:
+			GenerateAndBulkSendTransactions(messenger, wallet)
+		}
 
 		/*select {
 		case <-time.After(time.Second * 10):
@@ -73,7 +82,9 @@ func StartPeer(wallet sdkWallet.Wallet) error {
 
 func subscribeToTopics(messenger p2p.Messenger) {
 	for _, topic := range Configuration.P2P.Topics {
-		messenger.CreateTopic(topic, true)
+		if !messenger.HasTopic(topic) {
+			messenger.CreateTopic(topic, true)
+		}
 	}
 }
 
@@ -111,6 +122,10 @@ func randomizeData() []byte {
 	bytes := []byte(message.String())
 
 	return bytes
+}
+
+func randomizeShardID() uint32 {
+	return utils.RandomElementFromUint32Slice(Configuration.P2P.ShardIDs)
 }
 
 func createNode(p2pConfig config.P2PConfig) (p2p.Messenger, error) {

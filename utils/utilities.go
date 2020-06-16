@@ -18,6 +18,22 @@ func RandomElementFromArray(items []string) string {
 	return item
 }
 
+// RandomElementFromIntSlice fetches a random element from an array
+func RandomElementFromIntSlice(items []int) int {
+	randomIndex := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(len(items))
+	item := items[randomIndex]
+
+	return item
+}
+
+// RandomElementFromUint32Slice fetches a random element from an array
+func RandomElementFromUint32Slice(items []uint32) uint32 {
+	randomIndex := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(len(items))
+	item := items[randomIndex]
+
+	return item
+}
+
 // ArrayFromFile - fetch a list of ip addresses from a specified file
 func ArrayFromFile(filePath string) (lines []string, err error) {
 	data, err := ReadFileToString(filePath)

@@ -32,6 +32,12 @@ var (
 		Value: -1,
 	}
 
+	method = cli.StringFlag{
+		Name:  "method",
+		Usage: "Which p2p method to run",
+		Value: "transactions",
+	}
+
 	receiversFile = cli.StringFlag{
 		Name:  "receivers",
 		Usage: "Which file to use for reading receiver addresses to send txs to",
@@ -71,7 +77,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{concurrency, rotation, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletsPath}
+	app.Flags = []cli.Flag{concurrency, rotation, method, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletsPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -141,13 +147,21 @@ func setupP2PConfig(ctx *cli.Context) error {
 	}
 
 	p2p.Configuration.P2P.ElrondConfig = p2pConfig
+	p2p.Configuration.P2P.Method = ctx.GlobalString(method.Name)
 	p2p.Configuration.P2P.Topics = p2p.Topics
 	p2p.Configuration.P2P.ConnectionWait = 30
 	p2p.Configuration.P2P.Rotation = ctx.GlobalInt(rotation.Name)
+
 	p2p.Configuration.P2P.Shards = []string{
-		"META",
 		"0",
 		"1",
+		"META",
+	}
+
+	p2p.Configuration.P2P.ShardIDs = []uint32{
+		0,
+		1,
+		core.MetachainShardId,
 	}
 
 	addressPath, err := filepath.Abs(ctx.GlobalString(receiversFile.Name))
