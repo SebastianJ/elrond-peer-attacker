@@ -27,6 +27,7 @@ func BulkSendHeartbeats(messenger p2p.Messenger) {
 			fmt.Printf("BulkSendHeartbeats - error: %s\n", err.Error())
 			continue
 		}
+		fmt.Printf("Sending heartbeat message to topic %s of %d bytes\n", heartbeatTopic, len(heartbeatData))
 		messenger.Broadcast(heartbeatTopic, heartbeatData)
 	}
 }
