@@ -57,6 +57,7 @@ func StartPeer(wallet sdkWallet.Wallet) error {
 		/*select {
 		case <-time.After(time.Second * 10):
 			subscribeToTopics(messenger)
+			displayMessengerInfo(messenger)
 		}*/
 
 		round++
