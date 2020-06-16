@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -42,14 +43,14 @@ const ListenLocalhostAddrWithIp4AndTcp = "/ip4/127.0.0.1/tcp/"
 // DirectSendID represents the protocol ID for sending and receiving direct P2P messages
 const DirectSendID = protocol.ID("/erd/directsend/1.0.0")
 
-const durationBetweenSends = time.Microsecond * 0
+const durationBetweenSends = time.Microsecond * 10
 const durationCheckConnections = time.Second
-const refreshPeersOnTopic = time.Second * 1
-const ttlPeersOnTopic = time.Second * 1
-const pubsubTimeCacheDuration = 1 * time.Minute
-const broadcastGoRoutines = 100000000
-const timeBetweenPeerPrints = time.Second * 1
-const timeBetweenExternalLoggersCheck = time.Second * 1
+const refreshPeersOnTopic = time.Second * 3
+const ttlPeersOnTopic = time.Second * 10
+const pubsubTimeCacheDuration = 10 * time.Minute
+const broadcastGoRoutines = 1000
+const timeBetweenPeerPrints = time.Second * 20
+const timeBetweenExternalLoggersCheck = time.Second * 20
 const defaultThresholdMinConnectedPeers = 3
 const minRangePortValue = 1025
 
@@ -223,6 +224,10 @@ func (netMes *networkMessenger) createPubSub(withMessageSigning bool) error {
 	optsPS := []pubsub.Option{
 		pubsub.WithMessageSigning(withMessageSigning),
 	}
+
+	traceFile := filepath.Join("./", fmt.Sprintf("p2p-%s.json", "kek"))
+	tracer, _ := pubsub.NewJSONTracer(traceFile)
+	optsPS = append(optsPS, pubsub.WithEventTracer(tracer))
 
 	pubsub.TimeCacheDuration = pubsubTimeCacheDuration
 
@@ -617,15 +622,15 @@ func (netMes *networkMessenger) BroadcastOnChannelBlocking(channel string, topic
 	if !netMes.goRoutinesThrottler.CanProcess() {
 		return erd_p2p.ErrTooManyGoroutines
 	}
-
-	netMes.goRoutinesThrottler.StartProcessing()*/
+	*/
+	netMes.goRoutinesThrottler.StartProcessing()
 
 	sendable := &erd_p2p.SendableData{
 		Buff:  buff,
 		Topic: topic,
 	}
 	netMes.outgoingPLB.GetChannelOrDefault(channel) <- sendable
-	//netMes.goRoutinesThrottler.EndProcessing()
+	netMes.goRoutinesThrottler.EndProcessing()
 	return nil
 }
 
