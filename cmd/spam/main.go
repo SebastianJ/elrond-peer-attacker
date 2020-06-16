@@ -26,10 +26,10 @@ var (
 		Value: 100,
 	}
 
-	ipAddressFile = cli.StringFlag{
-		Name:  "ip-address-file",
-		Usage: "Which file to use for reading ip addresses to launch seed nodes on",
-		Value: "./data/ips.txt",
+	rotation = cli.IntFlag{
+		Name:  "rotation",
+		Usage: "How many txs to send per loop & wallet",
+		Value: -1,
 	}
 
 	receiversFile = cli.StringFlag{
@@ -71,7 +71,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{concurrency, ipAddressFile, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletsPath}
+	app.Flags = []cli.Flag{concurrency, rotation, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletsPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -105,7 +105,7 @@ func startApp(ctx *cli.Context) error {
 	p2p.Configuration.Concurrency = ctx.GlobalInt(concurrency.Name)
 	p2p.Configuration.NumberOfShards = 2
 
-	if err := p2p.StartNodes(); err != nil {
+	if err := p2p.StartPeers(); err != nil {
 		return err
 	}
 
@@ -143,7 +143,7 @@ func setupP2PConfig(ctx *cli.Context) error {
 	p2p.Configuration.P2P.ElrondConfig = p2pConfig
 	p2p.Configuration.P2P.Topics = p2p.Topics
 	p2p.Configuration.P2P.ConnectionWait = 30
-	p2p.Configuration.P2P.MessageCount = 100000
+	p2p.Configuration.P2P.Rotation = ctx.GlobalInt(rotation.Name)
 	p2p.Configuration.P2P.Shards = []string{
 		"META",
 		"0",

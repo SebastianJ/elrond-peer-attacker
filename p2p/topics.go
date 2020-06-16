@@ -3,6 +3,8 @@ package p2p
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ElrondNetwork/elrond-go/core"
 )
 
 var (
@@ -34,6 +36,22 @@ var (
 		"heartbeat",*/
 	}
 )
+
+func generateTopic(channel string, senderShardID uint32, receiverShardID uint32) string {
+	if receiverShardID == core.MetachainShardId {
+		return fmt.Sprintf("%s_%d_META", channel, senderShardID)
+	}
+
+	if receiverShardID == senderShardID {
+		return fmt.Sprintf("%s_%d", channel, senderShardID)
+	}
+
+	if senderShardID > receiverShardID {
+		return fmt.Sprintf("%s_%d_%d", channel, receiverShardID, senderShardID)
+	}
+
+	return fmt.Sprintf("%s_%d_%d", channel, senderShardID, receiverShardID)
+}
 
 func generateTopics() []string {
 	var topics []string

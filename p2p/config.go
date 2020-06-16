@@ -28,6 +28,7 @@ type P2PConfig struct {
 	Peers               int
 	Host                string
 	Port                int
+	Rotation            int
 	Topics              []string
 	Protocol            string
 	Rendezvous          string

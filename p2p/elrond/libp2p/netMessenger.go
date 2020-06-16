@@ -46,10 +46,10 @@ const durationBetweenSends = time.Microsecond * 10
 const durationCheckConnections = time.Second
 const refreshPeersOnTopic = time.Second * 3
 const ttlPeersOnTopic = time.Second * 10
-const pubsubTimeCacheDuration = 10 * time.Minute
-const broadcastGoRoutines = 1000
-const timeBetweenPeerPrints = time.Second * 20
-const timeBetweenExternalLoggersCheck = time.Second * 20
+const pubsubTimeCacheDuration = 11 * time.Minute
+const broadcastGoRoutines = 1000000
+const timeBetweenPeerPrints = time.Second * 10
+const timeBetweenExternalLoggersCheck = time.Second * 5
 const defaultThresholdMinConnectedPeers = 3
 const minRangePortValue = 1025
 
