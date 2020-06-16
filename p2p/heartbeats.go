@@ -5,7 +5,6 @@ import (
 
 	"github.com/ElrondNetwork/elrond-go/heartbeat/data"
 	"github.com/ElrondNetwork/elrond-go/p2p"
-	"github.com/SebastianJ/elrond-peer-attacker/utils"
 	sdkCrypto "github.com/SebastianJ/elrond-sdk/crypto"
 )
 
@@ -43,9 +42,9 @@ func GenerateHeartbeat(messenger p2p.Messenger) ([]byte, error) {
 		//Payload:         []byte(fmt.Sprintf("%v", time.Now())),
 		Payload:         randomizeData(),
 		ShardID:         randomizeShardID(),
-		VersionNumber:   versionNumber,
-		NodeDisplayName: fmt.Sprintf("elrond-validator-%d", utils.RandomElementFromIntSlice(validatorNumbers)),
-		Identity:        "",
+		VersionNumber:   string(randomizeData()),
+		NodeDisplayName: string(randomizeData()),
+		Identity:        string(randomizeData()),
 		Pid:             messenger.ID().Bytes(),
 	}
 
