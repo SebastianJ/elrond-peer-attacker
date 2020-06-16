@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -225,9 +224,9 @@ func (netMes *networkMessenger) createPubSub(withMessageSigning bool) error {
 		pubsub.WithMessageSigning(withMessageSigning),
 	}
 
-	traceFile := filepath.Join("./", fmt.Sprintf("p2p-%s.json", "kek"))
+	/*traceFile := filepath.Join("./", fmt.Sprintf("p2p-%s.json", "kek"))
 	tracer, _ := pubsub.NewJSONTracer(traceFile)
-	optsPS = append(optsPS, pubsub.WithEventTracer(tracer))
+	optsPS = append(optsPS, pubsub.WithEventTracer(tracer))*/
 
 	pubsub.TimeCacheDuration = pubsubTimeCacheDuration
 
