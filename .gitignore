@@ -13,6 +13,8 @@
 
 /keys
 /dist
+/data
+/config
 /cmd/eclipse/eclipse
 
 go.mod.dev
