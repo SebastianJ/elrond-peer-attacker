@@ -178,6 +178,7 @@ func createMessenger(
 		p2pHost:           erd_libp2p.NewConnectableHost(p2pHost),
 		processors:        make(map[string]erd_p2p.MessageProcessor),
 		topics:            make(map[string]*pubsub.Topic),
+		subscriptions:     make(map[string]*pubsub.Subscription),
 		outgoingPLB:       loadBalancer.NewOutgoingChannelLoadBalancer(),
 		peerShardResolver: &unknownPeerShardResolver{},
 		messageIdCacher:   &disabled.Cacher{},
