@@ -3,12 +3,14 @@ package p2p
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ElrondNetwork/elrond-go/core"
 	"github.com/ElrondNetwork/elrond-go/core/partitioning"
 	"github.com/ElrondNetwork/elrond-go/node"
 	"github.com/ElrondNetwork/elrond-go/p2p"
 	"github.com/SebastianJ/elrond-peer-attacker/utils"
+	sdkAPI "github.com/SebastianJ/elrond-sdk/api"
 	sdkTransactions "github.com/SebastianJ/elrond-sdk/transactions"
 	sdkWallet "github.com/SebastianJ/elrond-sdk/wallet"
 )
@@ -19,17 +21,25 @@ var (
 
 // GenerateAndBulkSendTransactions - generates and sends transactions in bulk
 func GenerateAndBulkSendTransactions(messenger p2p.Messenger, wallet sdkWallet.Wallet) error {
+	client := sdkAPI.Client{
+		Host:                 utils.RandomizeAPIURL(),
+		ForceAPINonceLookups: true,
+	}
+	client.Initialize()
+
+	nonce := retrieveNonce(wallet, client, 10)
+
 	account, err := Configuration.Account.Client.GetAccount(wallet.Address)
 	if err != nil {
 		fmt.Printf("Failed to retrieve account data - error: %s", err)
 		return err
 	}
-	nonce := uint64(account.Nonce)
+	nonce = uint64(account.Nonce)
 	txs := []sdkTransactions.Transaction{}
 
 	for i := 0; i < Configuration.Concurrency; i++ {
 		receiver := randomizeReceiverAddress()
-		tx, err := generateTransaction(wallet, receiver, nonce)
+		tx, err := generateTransaction(wallet, client, receiver, nonce)
 		if err != nil {
 			fmt.Printf("Error occurred while generating transaction - error: %s\n", err.Error())
 			return err
@@ -114,11 +124,28 @@ func BulkSendTransactionsFromShard(messenger p2p.Messenger, transactions [][]byt
 	return nil
 }
 
+func retrieveNonce(wallet sdkWallet.Wallet, client sdkAPI.Client, retries uint32) uint64 {
+	nonce := uint64(0)
+	account, err := client.GetAccount(wallet.Address)
+	if err != nil {
+		retries--
+		if retries > 0 {
+			time.Sleep(time.Second * time.Duration(1))
+			return retrieveNonce(wallet, client, retries)
+		}
+		fmt.Printf("Failed to retrieve account data - error: %s", err)
+	} else {
+		nonce = uint64(account.Nonce)
+	}
+
+	return nonce
+}
+
 func randomizeReceiverAddress() string {
 	return utils.RandomElementFromArray(Configuration.P2P.TxReceivers)
 }
 
-func generateTransaction(wallet sdkWallet.Wallet, receiver string, nonce uint64) (sdkTransactions.Transaction, error) {
+func generateTransaction(wallet sdkWallet.Wallet, client sdkAPI.Client, receiver string, nonce uint64) (sdkTransactions.Transaction, error) {
 	gasParams := Configuration.Account.GasParams
 
 	tx, err := sdkTransactions.GenerateAndSignTransaction(
@@ -129,7 +156,7 @@ func generateTransaction(wallet sdkWallet.Wallet, receiver string, nonce uint64)
 		int64(nonce),
 		Configuration.P2P.Data,
 		gasParams,
-		Configuration.Account.Client,
+		client,
 	)
 	if err != nil {
 		return sdkTransactions.Transaction{}, err

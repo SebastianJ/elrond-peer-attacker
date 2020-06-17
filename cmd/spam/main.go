@@ -208,7 +208,7 @@ func setupAccountConfig(ctx *cli.Context) error {
 	}
 
 	client := api.Client{
-		Host:                 "https://wallet-api.elrond.com",
+		Host:                 utils.RandomizeAPIURL(),
 		ForceAPINonceLookups: true,
 	}
 	client.Initialize()

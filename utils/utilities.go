@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+// RandomizeAPIURL - randomize API url to use
+func RandomizeAPIURL() string {
+	urls := []string{
+		"https://api.elrond.com",
+		"https://wallet-api.elrond.com",
+	}
+
+	return RandomElementFromArray(urls)
+}
+
 // RandomElementFromArray fetches a random element from an array
 func RandomElementFromArray(items []string) string {
 	randomIndex := rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Intn(len(items))

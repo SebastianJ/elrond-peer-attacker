@@ -15,6 +15,7 @@ import (
 	"github.com/ElrondNetwork/elrond-go/p2p/libp2p"
 	epa_libp2p "github.com/SebastianJ/elrond-peer-attacker/p2p/elrond/libp2p"
 	"github.com/SebastianJ/elrond-peer-attacker/utils"
+	sdkAPI "github.com/SebastianJ/elrond-sdk/api"
 	sdkWallet "github.com/SebastianJ/elrond-sdk/wallet"
 )
 
@@ -92,7 +93,13 @@ func subscribeToTopics(messenger p2p.Messenger) {
 
 func broadcastMessage(messenger p2p.Messenger, wallet sdkWallet.Wallet, receiver string, nonce uint64) { //, waitGroup *sync.WaitGroup) {
 	//defer waitGroup.Done()
-	tx, err := generateTransaction(wallet, receiver, nonce)
+	client := sdkAPI.Client{
+		Host:                 utils.RandomizeAPIURL(),
+		ForceAPINonceLookups: true,
+	}
+	client.Initialize()
+
+	tx, err := generateTransaction(wallet, client, receiver, nonce)
 	if err != nil {
 		return
 	}
