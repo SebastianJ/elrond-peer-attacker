@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/ElrondNetwork/elrond-go v1.0.132
 	github.com/ElrondNetwork/elrond-go-logger v1.0.3
-	github.com/SebastianJ/elrond-sdk v0.0.0-20200616143823-4334c43511ab
+	github.com/SebastianJ/elrond-sdk v0.0.0-20200617212904-39a38e0b20f3
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/gogo/protobuf v1.3.1
 	github.com/ipfs/go-ds-badger v0.2.3

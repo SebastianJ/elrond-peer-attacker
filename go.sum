@@ -39,8 +39,8 @@ github.com/ElrondNetwork/elrond-vm-util v0.2.6/go.mod h1:tLiuKpnQB5IrcMtZvwAJqo2
 github.com/Kubuxu/go-os-helper v0.0.1/go.mod h1:N8B+I7vPCT80IcP58r50u4+gEEcsZETFUpAzWW2ep1Y=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/SebastianJ/elrond-sdk v0.0.0-20200616143823-4334c43511ab h1:MFaBdiHgAu/1IFLEVsepXSuwRxuCAe2gGCJU11iVHq0=
-github.com/SebastianJ/elrond-sdk v0.0.0-20200616143823-4334c43511ab/go.mod h1:HQ5U1QLThqnlVcgIM8dOVdgFzcusrfnycvr/GbPguuM=
+github.com/SebastianJ/elrond-sdk v0.0.0-20200617212904-39a38e0b20f3 h1:ATMBNuKBe9pJsGNnSbtIczRmsB6PACKcyZjxEYkAsSs=
+github.com/SebastianJ/elrond-sdk v0.0.0-20200617212904-39a38e0b20f3/go.mod h1:HQ5U1QLThqnlVcgIM8dOVdgFzcusrfnycvr/GbPguuM=
 github.com/StackExchange/wmi v0.0.0-20170410192909-ea383cf3ba6e/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=

@@ -15,5 +15,5 @@ curl -o data/tx_data.txt https://gist.githubusercontent.com/SebastianJ/bad62d561
 curl -o data/tx_receivers.txt https://gist.githubusercontent.com/SebastianJ/3fa9e75ed6d78f85d1e73eb1370f05ad/raw/f02dfc2e4e7d19f25cfa8a2fe3390aa3f2004b34/receivers.txt
 
 echo "Downloading smart contract data files..."
-curl -o data/sc_data.txt https://gist.githubusercontent.com/SebastianJ/30d345cf430900609d08fe5024ddeca5/raw/0d61ce7f6e75ef2cb51e63e0519cb67ac0933c9a/data.txt
+curl -o data/sc_data.txt https://gist.githubusercontent.com/SebastianJ/fe7b66029391742d25c4dfaa0a1ac053/raw/542a04763f8c2b05aa9aa1d5441291c1285d8276/data.txt
 curl -o data/sc_receivers.txt https://gist.githubusercontent.com/SebastianJ/d127e1fb78ed0ed74d1a33ca52f62775/raw/02b5103980ce05c28d96a088d92dd3629d65dc2e/receivers.txt
