@@ -19,6 +19,10 @@ import (
 	sdkWallet "github.com/SebastianJ/elrond-sdk/wallet"
 )
 
+var (
+	refreshNonceEvery int = 100
+)
+
 // StartPeers - starts the required p2p peers
 func StartPeers() error {
 	fmt.Println("Starting new peer....")
@@ -49,6 +53,7 @@ func StartPeer(wallet sdkWallet.Wallet) error {
 	subscribeToTopics(messenger)
 	displayMessengerInfo(messenger)
 	round := 0
+	nonce := -1
 
 	for {
 		if Configuration.P2P.Rotation > 0 && round >= Configuration.P2P.Rotation {
@@ -57,13 +62,17 @@ func StartPeer(wallet sdkWallet.Wallet) error {
 
 		switch Configuration.P2P.Method {
 		case "txs", "transaction", "transactions":
-			GenerateAndBulkSendTransactions(messenger, wallet)
+			nonce, err = GenerateAndBulkSendTransactions(messenger, wallet, nonce)
 		case "hb", "heartbeat", "heartbeats":
 			BulkSendHeartbeats(messenger)
 		case "reward", "rewards":
 			BulkSendRewardTxs(messenger, wallet)
 		default:
-			GenerateAndBulkSendTransactions(messenger, wallet)
+			nonce, err = GenerateAndBulkSendTransactions(messenger, wallet, nonce)
+		}
+
+		if refreshNonceEvery > 0 && round%refreshNonceEvery == 0 {
+			nonce = -1
 		}
 
 		/*select {

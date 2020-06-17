@@ -5,7 +5,7 @@
     #Port is the port that will be opened by the node on all interfaces so other peers can connect to it
     #If the port = 0, the node will search for a free port on the machine and use it
     #Can use single values such as 0, 10230, 15670 or a range such as 5000-10000
-    Port = "37373-38383"
+    Port = "25000-65534"
 
     #Seed represents the seed string generator for p2p identity (used during authentication and message passing).
     #An empty Seed value will mean that the identity will be generated randomly in a secure cryptographically manner.
@@ -50,30 +50,25 @@
     #phase but will accept connections and will do the network discovery if another peer connects to it
     InitialPeerList = [
         "/dns4/gateway.battleofnodes.com/tcp/10000/p2p/16Uiu2HAmFKvSukM3DAHkLj2k9g5zn3ZSqdPSAwSxBPsKgiVSC8DF",
-        "/dns4/gateway2.battleofnodes.com/tcp/10000/p2p/16Uiu2HAmRe5mqP6M9pyP3df1FH3WPtHkshXdgiUy21FSV7fuJrWE",
-        "/dns4/gateway1.viastake.com/tcp/10000/p2p/16Uiu2HAmTFs3BbAFZxQDbRFdbtoa4V88gxKxEAa8SkL31hdqLSzT",
-        "/dns4/gateway.staking.agency/tcp/10000/p2p/16Uiu2HAmSyWJSM42KS7jQerCbrGiUxfpjwyofkJ7Xyfd4tT6Nmeb",
-        "/dns4/gateway2.viastake.com/tcp/10000/p2p/16Uiu2HAmUANZLrwJgjajQHAYgyysvb6AvrfpuAUnzFDn44ycEJxp",
-        "/dns4/gateway3.viastake.com/tcp/10000/p2p/16Uiu2HAmF6N6t5kkzA6WD3wQQygZCJTk9hQzH3ncbC88sQymnbZd",
-        "/dns4/gateway4.viastake.com/tcp/10000/p2p/16Uiu2HAm7CffDbB6io6yyEKFU5DX5Q2NYZDJ5BZEvfrtbqLuzf88"
+        "/dns4/gateway2.battleofnodes.com/tcp/10000/p2p/16Uiu2HAmRe5mqP6M9pyP3df1FH3WPtHkshXdgiUy21FSV7fuJrWE"
     ]
 
     #kademlia's routing table bucket size
-    BucketSize = 100
+    BucketSize = 1000
 
     #RoutingTableRefreshIntervalInSec defines how many seconds should pass between 2 kad routing table auto refresh calls
-    RoutingTableRefreshIntervalInSec = 300
+    RoutingTableRefreshIntervalInSec = 60
 
 [Sharding]
     # The targeted number of peer connections
-    TargetPeerCount = 47
-    MaxIntraShardValidators = 25
-    MaxCrossShardValidators = 8
-    MaxIntraShardObservers = 7
-    MaxCrossShardObservers = 3
+    TargetPeerCount = 100000
+    MaxIntraShardValidators = 100000
+    MaxCrossShardValidators = 100000
+    MaxIntraShardObservers = 1000000
+    MaxCrossShardObservers = 100000
     #available options:
     #  `ListsSharder` will split the peers based on the shard membership (intra, cross or unknown)
     #  `OneListSharder` will do just the connection triming (upto TargetPeerCount value) not taking into account
     #              the shard membership of the connected peers
     #  `NilListSharder` will disable conection trimming (sharder is off)
-    Type = "ListsSharder"
+    Type = "NilListSharder"

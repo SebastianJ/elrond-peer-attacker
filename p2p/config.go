@@ -39,6 +39,7 @@ type P2PConfig struct {
 	Log                 bool
 	Shards              []string
 	ShardIDs            []uint32
+	TxAmount            float64
 	TxReceivers         []string
 	TxMarshalizer       *marshal.TxJsonMarshalizer
 	InternalMarshalizer *marshal.GogoProtoMarshalizer

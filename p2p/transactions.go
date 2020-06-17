@@ -20,37 +20,36 @@ var (
 )
 
 // GenerateAndBulkSendTransactions - generates and sends transactions in bulk
-func GenerateAndBulkSendTransactions(messenger p2p.Messenger, wallet sdkWallet.Wallet) error {
+func GenerateAndBulkSendTransactions(messenger p2p.Messenger, wallet sdkWallet.Wallet, nonce int) (int, error) {
 	client := sdkAPI.Client{
 		Host:                 utils.RandomizeAPIURL(),
 		ForceAPINonceLookups: true,
 	}
 	client.Initialize()
 
-	nonce := retrieveNonce(wallet, client, 10)
-
-	account, err := Configuration.Account.Client.GetAccount(wallet.Address)
-	if err != nil {
-		fmt.Printf("Failed to retrieve account data - error: %s", err)
-		return err
+	var currentNonce uint64
+	if nonce < 0 {
+		currentNonce = retrieveNonce(wallet, client, 10)
+	} else {
+		currentNonce = uint64(nonce)
 	}
-	nonce = uint64(account.Nonce)
+
 	txs := []sdkTransactions.Transaction{}
 
 	for i := 0; i < Configuration.Concurrency; i++ {
 		receiver := randomizeReceiverAddress()
-		tx, err := generateTransaction(wallet, client, receiver, nonce)
+		tx, err := generateTransaction(wallet, client, receiver, currentNonce)
 		if err != nil {
 			fmt.Printf("Error occurred while generating transaction - error: %s\n", err.Error())
-			return err
+			return -1, err
 		}
 		txs = append(txs, tx)
-		nonce++
+		currentNonce++
 	}
 
 	BulkSendTransactions(messenger, wallet, txs)
 
-	return nil
+	return int(currentNonce), nil
 }
 
 // BulkSendTransactions - sends the provided transactions as a bulk, optimizing transfer between nodes
@@ -151,7 +150,7 @@ func generateTransaction(wallet sdkWallet.Wallet, client sdkAPI.Client, receiver
 	tx, err := sdkTransactions.GenerateAndSignTransaction(
 		wallet,
 		receiver,
-		0.0,
+		Configuration.P2P.TxAmount,
 		false,
 		int64(nonce),
 		Configuration.P2P.Data,
@@ -162,7 +161,7 @@ func generateTransaction(wallet sdkWallet.Wallet, client sdkAPI.Client, receiver
 		return sdkTransactions.Transaction{}, err
 	}
 
-	fmt.Printf("Generated transaction - receiver: %s, nonce: %d, tx hash: %s\n", receiver, nonce, tx.TxHash)
+	fmt.Printf("Generated transaction - sender: %s, receiver: %s, amount: %f, nonce: %d, tx hash: %s\n", wallet.Address, receiver, Configuration.P2P.TxAmount, nonce, tx.TxHash)
 
 	return tx, nil
 }

@@ -44,12 +44,12 @@ const DirectSendID = protocol.ID("/erd/directsend/1.0.0")
 
 const durationBetweenSends = time.Microsecond * 10
 const durationCheckConnections = time.Second
-const refreshPeersOnTopic = time.Second * 3
-const ttlPeersOnTopic = time.Second * 10
-const pubsubTimeCacheDuration = 11 * time.Minute
-const broadcastGoRoutines = 1000000
+const refreshPeersOnTopic = time.Second * 1
+const ttlPeersOnTopic = time.Second * 3
+const pubsubTimeCacheDuration = 1 * time.Minute
+const broadcastGoRoutines = 1000000000
 const timeBetweenPeerPrints = time.Second * 10
-const timeBetweenExternalLoggersCheck = time.Second * 5
+const timeBetweenExternalLoggersCheck = time.Second * 10
 const defaultThresholdMinConnectedPeers = 3
 const minRangePortValue = 1025
 
@@ -226,10 +226,6 @@ func (netMes *networkMessenger) createPubSub(withMessageSigning bool) error {
 		pubsub.WithMessageSigning(withMessageSigning),
 	}
 
-	/*traceFile := filepath.Join("./", fmt.Sprintf("p2p-%s.json", "kek"))
-	tracer, _ := pubsub.NewJSONTracer(traceFile)
-	optsPS = append(optsPS, pubsub.WithEventTracer(tracer))*/
-
 	pubsub.TimeCacheDuration = pubsubTimeCacheDuration
 
 	var err error
@@ -246,7 +242,7 @@ func (netMes *networkMessenger) createPubSub(withMessageSigning bool) error {
 		return err
 	}
 
-	go func(pubsub *pubsub.PubSub, plb erd_p2p.ChannelLoadBalancer) {
+	go func(plb erd_p2p.ChannelLoadBalancer) {
 		for {
 			select {
 			case <-time.After(durationBetweenSends):
@@ -276,7 +272,7 @@ func (netMes *networkMessenger) createPubSub(withMessageSigning bool) error {
 				log.Trace("error sending data", "error", errPublish)
 			}
 		}
-	}(netMes.pb, netMes.outgoingPLB)
+	}(netMes.outgoingPLB)
 
 	return nil
 }
@@ -421,17 +417,9 @@ func (netMes *networkMessenger) ApplyOptions(opts ...Option) error {
 
 // Close closes the host, connections and streams
 func (netMes *networkMessenger) Close() error {
-	netMes.cancelFunc()
+	log.Debug("closing network messenger's host...")
 
 	var err error
-	errOplb := netMes.outgoingPLB.Close()
-	if errOplb != nil {
-		err = errOplb
-		log.Warn("networkMessenger.Close",
-			"component", "outgoingPLB",
-			"error", err)
-	}
-
 	errHost := netMes.p2pHost.Close()
 	if errHost != nil {
 		err = errHost
@@ -440,8 +428,22 @@ func (netMes *networkMessenger) Close() error {
 			"error", err)
 	}
 
+	log.Debug("closing network messenger's outgoing load balancer...")
+
+	errOplb := netMes.outgoingPLB.Close()
+	if errOplb != nil {
+		err = errOplb
+		log.Warn("networkMessenger.Close",
+			"component", "outgoingPLB",
+			"error", err)
+	}
+
+	log.Debug("closing network messenger's components through the context...")
+
+	netMes.cancelFunc()
+
 	if err == nil {
-		log.Debug("network messenger closed successfully")
+		log.Info("network messenger closed successfully")
 	}
 
 	return err
@@ -577,6 +579,7 @@ func (netMes *networkMessenger) CreateTopic(name string, createChannelForTopic b
 		return fmt.Errorf("%w for topic %s", err, name)
 	}
 
+	netMes.subscriptions[name] = subscrRequest
 	if createChannelForTopic {
 		err = netMes.outgoingPLB.AddChannel(name)
 	}
@@ -587,6 +590,10 @@ func (netMes *networkMessenger) CreateTopic(name string, createChannelForTopic b
 		for {
 			_, errSubscrNext = subscrRequest.Next(netMes.ctx)
 			if errSubscrNext != nil {
+				log.Debug("closed subscription",
+					"topic", subscrRequest.Topic(),
+					"err", errSubscrNext,
+				)
 				return
 			}
 		}
@@ -622,16 +629,16 @@ func (netMes *networkMessenger) BroadcastOnChannelBlocking(channel string, topic
 
 	if !netMes.goRoutinesThrottler.CanProcess() {
 		return erd_p2p.ErrTooManyGoroutines
-	}
-	*/
-	netMes.goRoutinesThrottler.StartProcessing()
+	}*/
+
+	//netMes.goRoutinesThrottler.StartProcessing()
 
 	sendable := &erd_p2p.SendableData{
 		Buff:  buff,
 		Topic: topic,
 	}
 	netMes.outgoingPLB.GetChannelOrDefault(channel) <- sendable
-	netMes.goRoutinesThrottler.EndProcessing()
+	//netMes.goRoutinesThrottler.EndProcessing()
 	return nil
 }
 
@@ -697,12 +704,14 @@ func (netMes *networkMessenger) pubsubCallback(handler erd_p2p.MessageProcessor)
 			return false
 		}
 
-		err = handler.ProcessReceivedMessage(wrappedMsg, core.PeerID(pid))
+		fromConnectedPeer := core.PeerID(pid)
+		err = handler.ProcessReceivedMessage(wrappedMsg, fromConnectedPeer)
 		if err != nil {
 			log.Trace("p2p validator",
 				"error", err.Error(),
 				"topics", message.TopicIDs,
-				"pid", erd_p2p.MessageOriginatorPid(wrappedMsg),
+				"originator", erd_p2p.MessageOriginatorPid(wrappedMsg),
+				"from connected peer", erd_p2p.PeerIdToShortString(fromConnectedPeer),
 				"seq no", erd_p2p.MessageOriginatorSeq(wrappedMsg),
 			)
 
@@ -728,7 +737,7 @@ func (netMes *networkMessenger) UnregisterAllMessageProcessors() error {
 			return err
 		}
 
-		netMes.processors[topic] = nil
+		delete(netMes.processors, topic)
 	}
 	return nil
 }
@@ -803,7 +812,8 @@ func (netMes *networkMessenger) directMessageHandler(message erd_p2p.MessageP2P,
 			log.Trace("p2p validator",
 				"error", err.Error(),
 				"topics", msg.Topics(),
-				"pid", erd_p2p.MessageOriginatorPid(msg),
+				"originator", erd_p2p.MessageOriginatorPid(msg),
+				"from connected peer", erd_p2p.PeerIdToShortString(fromConnectedPeer),
 				"seq no", erd_p2p.MessageOriginatorSeq(msg),
 			)
 		}
@@ -836,7 +846,7 @@ func (netMes *networkMessenger) ThresholdMinConnectedPeers() int {
 }
 
 // SetPeerShardResolver sets the peer shard resolver component that is able to resolve the link
-// between p2p.PeerID and shardId
+// between erd_p2p.PeerID and shardId
 func (netMes *networkMessenger) SetPeerShardResolver(peerShardResolver erd_p2p.PeerShardResolver) error {
 	if check.IfNil(peerShardResolver) {
 		return erd_p2p.ErrNilPeerShardResolver

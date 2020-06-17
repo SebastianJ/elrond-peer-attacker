@@ -33,6 +33,12 @@ var (
 		Value: -1,
 	}
 
+	amount = cli.Float64Flag{
+		Name:  "amount",
+		Usage: "How much to send per transaction",
+		Value: 0.0,
+	}
+
 	method = cli.StringFlag{
 		Name:  "method",
 		Usage: "Which p2p method to run",
@@ -78,7 +84,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Eclipser CLI App"
 	app.Usage = "This is the entry point for starting a new eclipser app - the app will launch a bunch of seed nodes that essentially don't do anything"
-	app.Flags = []cli.Flag{concurrency, rotation, method, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletsPath}
+	app.Flags = []cli.Flag{concurrency, rotation, amount, method, receiversFile, configurationPath, economicsConfigurationPath, dataPath, walletsPath}
 	app.Version = "v0.0.1"
 	app.Authors = []cli.Author{
 		{
@@ -180,6 +186,7 @@ func setupP2PConfig(ctx *cli.Context) error {
 	}
 
 	p2p.Configuration.P2P.TxReceivers = receivers
+	p2p.Configuration.P2P.TxAmount = ctx.GlobalFloat64(amount.Name)
 
 	p2p.Configuration.P2P.TxMarshalizer = &marshal.TxJsonMarshalizer{}
 	p2p.Configuration.P2P.InternalMarshalizer = &marshal.GogoProtoMarshalizer{}
