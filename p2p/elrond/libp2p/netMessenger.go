@@ -85,6 +85,7 @@ type networkMessenger struct {
 	mutTopics           sync.RWMutex
 	processors          map[string]erd_p2p.MessageProcessor
 	topics              map[string]*pubsub.Topic
+	subscriptions       map[string]*pubsub.Subscription
 	outgoingPLB         erd_p2p.ChannelLoadBalancer
 	poc                 *peersOnChannel
 	goRoutinesThrottler *throttler.NumGoRoutinesThrottler
@@ -177,6 +178,7 @@ func createMessenger(
 		p2pHost:           erd_libp2p.NewConnectableHost(p2pHost),
 		processors:        make(map[string]erd_p2p.MessageProcessor),
 		topics:            make(map[string]*pubsub.Topic),
+		subscriptions:     make(map[string]*pubsub.Subscription),
 		outgoingPLB:       loadBalancer.NewOutgoingChannelLoadBalancer(),
 		peerShardResolver: &unknownPeerShardResolver{},
 		messageIdCacher:   &disabled.Cacher{},
@@ -729,6 +731,33 @@ func (netMes *networkMessenger) UnregisterAllMessageProcessors() error {
 		netMes.processors[topic] = nil
 	}
 	return nil
+}
+
+// UnjoinAllTopics call close on all topics
+func (netMes *networkMessenger) UnjoinAllTopics() error {
+	netMes.mutMessageIdCacher.Lock()
+	defer netMes.mutMessageIdCacher.Unlock()
+
+	var errFound error
+	for topicName, t := range netMes.topics {
+		subscr := netMes.subscriptions[topicName]
+		if subscr != nil {
+			subscr.Cancel()
+		}
+
+		err := t.Close()
+		if err != nil {
+			log.Warn("error closing topic",
+				"topic", topicName,
+				"error", err,
+			)
+			errFound = err
+		}
+
+		delete(netMes.topics, topicName)
+	}
+
+	return errFound
 }
 
 // UnregisterMessageProcessor unregisters a message processes on a topic
