@@ -34,6 +34,11 @@ func RandomElementFromUint32Slice(items []uint32) uint32 {
 	return item
 }
 
+// RandomFloat64 - returns a random float64
+func RandomFloat64() float64 {
+	return rand.New(rand.NewSource(time.Now().UTC().UnixNano())).Float64()
+}
+
 // ArrayFromFile - fetch a list of ip addresses from a specified file
 func ArrayFromFile(filePath string) (lines []string, err error) {
 	data, err := ReadFileToString(filePath)

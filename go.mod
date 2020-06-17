@@ -7,6 +7,7 @@ require (
 	github.com/ElrondNetwork/elrond-go-logger v1.0.3
 	github.com/SebastianJ/elrond-sdk v0.0.0-20200616143823-4334c43511ab
 	github.com/btcsuite/btcd v0.20.1-beta
+	github.com/davecgh/go-spew v1.1.1
 	github.com/gogo/protobuf v1.3.1
 	github.com/ipfs/go-ds-badger v0.2.3
 	github.com/ipfs/go-log v1.0.4

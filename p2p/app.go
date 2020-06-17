@@ -59,6 +59,8 @@ func StartPeer(wallet sdkWallet.Wallet) error {
 			GenerateAndBulkSendTransactions(messenger, wallet)
 		case "hb", "heartbeat", "heartbeats":
 			BulkSendHeartbeats(messenger)
+		case "reward", "rewards":
+			BulkSendRewardTxs(messenger, wallet)
 		default:
 			GenerateAndBulkSendTransactions(messenger, wallet)
 		}

@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"github.com/ElrondNetwork/elrond-go/config"
+	"github.com/ElrondNetwork/elrond-go/hashing/blake2b"
 	"github.com/ElrondNetwork/elrond-go/marshal"
 	sdkAPI "github.com/SebastianJ/elrond-sdk/api"
 	"github.com/SebastianJ/elrond-sdk/transactions"
@@ -41,6 +42,7 @@ type P2PConfig struct {
 	TxReceivers         []string
 	TxMarshalizer       *marshal.TxJsonMarshalizer
 	InternalMarshalizer *marshal.GogoProtoMarshalizer
+	Hasher              *blake2b.Blake2b
 }
 
 type AccountConfig struct {

@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/ElrondNetwork/elrond-go/core"
+	"github.com/ElrondNetwork/elrond-go/hashing/blake2b"
 	"github.com/ElrondNetwork/elrond-go/marshal"
 	"github.com/SebastianJ/elrond-peer-attacker/p2p"
 	"github.com/SebastianJ/elrond-peer-attacker/utils"
@@ -182,6 +183,7 @@ func setupP2PConfig(ctx *cli.Context) error {
 
 	p2p.Configuration.P2P.TxMarshalizer = &marshal.TxJsonMarshalizer{}
 	p2p.Configuration.P2P.InternalMarshalizer = &marshal.GogoProtoMarshalizer{}
+	p2p.Configuration.P2P.Hasher = &blake2b.Blake2b{}
 
 	return nil
 }
